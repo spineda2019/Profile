@@ -7,6 +7,13 @@ project(Profile)
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 20)
 
+include(FetchContent)
+FetchContent_Declare(
+    argparse
+    GIT_REPOSITORY https://github.com/p-ranav/argparse.git
+)
+FetchContent_MakeAvailable(argparse)
+
 # add the directories containing the header files to the search path
 include_directories(include)
 
