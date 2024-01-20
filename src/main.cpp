@@ -1,3 +1,4 @@
+#include <Parser.hpp>
 #include <filesystem>
 #include <iostream>
 
@@ -20,7 +21,7 @@ int main(int argc, char** argv) {
   std::vector<std::filesystem::path> files{};
   directory_validation::GetFilesToProfile(directory, files);
 
-  for (const auto& file : files) {
-    std::cout << file << std::endl;
-  }
+  Parser parser = Parser::Create(std::move(files));
+
+  parser.ListFiles();
 }
