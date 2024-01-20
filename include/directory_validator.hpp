@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace directory_validation {
-bool DirectoryExists(std::filesystem::path directory_name);
+bool DirectoryExists(const std::filesystem::path& directory_name);
 
 void GetFilesToProfile(const std::filesystem::path& directory,
                        std::vector<std::filesystem::path>& found_files);

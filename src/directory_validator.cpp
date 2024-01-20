@@ -3,7 +3,7 @@
 #include <vector>
 
 namespace directory_validation {
-bool DirectoryExists(std::filesystem::path directory_name) {
+bool DirectoryExists(const std::filesystem::path& directory_name) {
   if (!std::filesystem::exists(directory_name)) {
     return false;
   } else {
