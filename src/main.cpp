@@ -9,8 +9,10 @@ int main(int argc, char** argv) {
   const char* directory = argv[1];
 
   if (!directory_validation::DirectoryExists(directory)) {
-    std::cerr << "FATAL: Directory " << directory << "does not exist!"
+    std::cerr << "FATAL: Directory " << directory << " does not exist!"
               << std::endl;
     return -1;
   }
+
+  std::cout << "Profiling Directory " << directory << std::endl;
 }
