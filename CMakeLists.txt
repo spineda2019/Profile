@@ -11,6 +11,6 @@ set(CMAKE_CXX_STANDARD 20)
 include_directories(include)
 
 # collect all source files from the src directory
-set(SOURCES "src/main.cpp" "src/directory_validator.cpp")
+set(SOURCES "src/main.cpp" "src/directory_validator.cpp" "src/Parser.cpp")
 # create the executable
 add_executable(${PROJECT_NAME} ${SOURCES})
