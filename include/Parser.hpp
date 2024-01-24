@@ -22,7 +22,7 @@ class Parser {
 
  private:
   const bool IsValidFile(const std::filesystem::path& file);
-  [[nodiscard]] int RecursivelyParseFiles(std::filesystem::path current_file);
+  [[nodiscard]] int RecursivelyParseFiles(const std::filesystem::path& current_file);
 
   std::fstream file_stream_;
   std::string line_;

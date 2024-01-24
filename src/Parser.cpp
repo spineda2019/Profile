@@ -42,7 +42,7 @@ const bool Parser::IsValidFile(const std::filesystem::path& file) {
 }
 
 [[nodiscard]] int Parser::RecursivelyParseFiles(
-    std::filesystem::path current_file) {
+    const std::filesystem::path& current_file) {
   if (std::filesystem::is_directory(current_file)) {
     for (const auto& entry :
          std::filesystem::directory_iterator(current_file)) {
