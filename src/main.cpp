@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
   std::vector<std::filesystem::path> files{};
   directory_validation::GetFilesToProfile(directory, files);
 
-  Parser parser = Parser::Create(std::move(files));
+  Parser parser(std::move(files));
 
   parser.ListFiles();
 }
