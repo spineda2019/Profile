@@ -1,5 +1,6 @@
 #include "Parser.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -16,6 +17,22 @@ void Parser::ListFiles() const {
   }
 }
 
+const bool Parser::IsValidFile(const std::filesystem::path& file) const {
+  std::filesystem::path extension(file.extension());
+
+  if (std::find(this->double_slash_extensions_.begin(),
+                this->double_slash_extensions_.end(),
+                extension) != this->double_slash_extensions_.end()) {
+    return true;
+  } else if (std::find(this->pound_sign_extensions_.begin(),
+                       this->pound_sign_extensions_.end(),
+                       extension) != this->pound_sign_extensions_.end()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 void Parser::ParseFiles() const {
   std::fstream file_stream{};
   std::string line{};
@@ -28,6 +45,9 @@ void Parser::ParseFiles() const {
   std::size_t fixme_position{};
   std::size_t comment_position{};
   for (const std::filesystem::path& file : this->files_) {
+    if (!this->IsValidFile(file)) {
+      continue;
+    }
     line_count = 0;
     file_stream = std::fstream(file);
 
