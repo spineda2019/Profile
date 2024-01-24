@@ -7,6 +7,7 @@
 int main(int argc, char** argv) {
   if (argc != 2) {
     std::cerr << "USE: Profile <DIRECTORY>" << std::endl;
+    return -1;
   }
   std::filesystem::path directory(argv[1]);
 
@@ -16,7 +17,7 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  std::cout << "Profiling Directory " << directory << std::endl;
+  std::cout << "Profiling Directory " << directory << std::endl << std::endl;
 
   std::vector<std::filesystem::path> files{};
   directory_validation::GetFilesToProfile(directory, files);
@@ -24,6 +25,4 @@ int main(int argc, char** argv) {
   Parser parser(std::move(files));
 
   parser.ParseFiles();
-
-  parser.ListFiles();
 }
