@@ -20,10 +20,7 @@ int main(int argc, char** argv) {
 
   std::cout << "Profiling Directory " << directory << std::endl << std::endl;
 
-  std::vector<std::filesystem::path> files{};
-  directory_validation::GetFilesToProfile(directory, files);
+  parser_info::Parser parser{};
 
-  parser_info::Parser parser(std::move(files));
-
-  return parser.ParseFiles();
+  return parser.ParseFiles(std::move(directory));
 }

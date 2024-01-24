@@ -4,6 +4,8 @@
 #include <array>
 #include <filesystem>
 #include <vector>
+#include <fstream>
+#include <string>
 
 namespace parser_info {
 
@@ -15,14 +17,27 @@ enum class CommentFormat : std::uint8_t {
 
 class Parser {
  public:
-  Parser(const std::vector<std::filesystem::path> files);
-  void ListFiles() const;
-  [[nodiscard]] int ParseFiles() const;
+  Parser();
+  [[nodiscard]] int ParseFiles(std::filesystem::path current_file);
 
  private:
-  const bool IsValidFile(const std::filesystem::path& file,
-                         CommentFormat& comment_format) const;
-  const std::vector<std::filesystem::path> files_;
+  const bool IsValidFile(const std::filesystem::path& file);
+  [[nodiscard]] int RecursivelyParseFiles(std::filesystem::path current_file);
+
+  std::fstream file_stream_;
+  std::string line_;
+
+  std::size_t line_count_;
+  std::size_t todo_count_;
+  std::size_t fixme_count_;
+  std::size_t file_count_;
+
+  std::size_t todo_position_;
+  std::size_t fixme_position_;
+  std::size_t comment_position_;
+
+  CommentFormat comment_format_;
+
   static constexpr std::array<const char*, 8> double_slash_extensions_{
       ".c", ".cpp", ".h", ".hpp", ".js", ".rs", ".ts", ".zig"};
   static constexpr std::array<const char*, 1> pound_sign_extensions_{".py"};

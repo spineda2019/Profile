@@ -10,103 +10,113 @@
 
 namespace parser_info {
 
-Parser::Parser(const std::vector<std::filesystem::path> files)
-    : files_(std::move(files)) {}
+Parser::Parser()
+    : file_stream_{},
+      line_{},
+      line_count_{},
+      todo_count_(0),
+      fixme_count_(0),
+      file_count_(0),
+      todo_position_{},
+      fixme_position_{},
+      comment_position_{},
+      comment_format_{} {}
 
-void Parser::ListFiles() const {
-  for (const auto& item : this->files_) {
-    std::cout << item << std::endl;
-  }
-}
-
-const bool Parser::IsValidFile(const std::filesystem::path& file,
-                               CommentFormat& comment_format) const {
+const bool Parser::IsValidFile(const std::filesystem::path& file) {
   std::filesystem::path extension(file.extension());
 
   if (std::find(this->double_slash_extensions_.begin(),
                 this->double_slash_extensions_.end(),
                 extension) != this->double_slash_extensions_.end()) {
-    comment_format = CommentFormat::DoubleSlash;
+    this->comment_format_ = CommentFormat::DoubleSlash;
     return true;
   } else if (std::find(this->pound_sign_extensions_.begin(),
                        this->pound_sign_extensions_.end(),
                        extension) != this->pound_sign_extensions_.end()) {
-    comment_format = CommentFormat::PoundSign;
+    this->comment_format_ = CommentFormat::PoundSign;
     return true;
   } else {
-    comment_format = CommentFormat::None;
+    this->comment_format_ = CommentFormat::None;
     return false;
   }
 }
 
-[[nodiscard]] int Parser::ParseFiles() const {
-  std::fstream file_stream{};
-  std::string line{};
-
-  std::size_t line_count{};
-  std::size_t todo_count = 0;
-  std::size_t fixme_count = 0;
-  std::size_t file_count = 0;
-
-  std::size_t todo_position{};
-  std::size_t fixme_position{};
-  std::size_t comment_position{};
-
-  CommentFormat comment_format{};
-  for (const std::filesystem::path& file : this->files_) {
-    if (!this->IsValidFile(file, comment_format)) {
-      continue;
-    }
-
-    file_count++;
-    line_count = 0;
-    file_stream = std::fstream(file);
-
-    while (std::getline(file_stream, line)) {
-      line_count++;
-      switch (comment_format) {
-        case CommentFormat::DoubleSlash:
-          comment_position = line.find("//");
-          break;
-        case CommentFormat::PoundSign:
-          comment_position = line.find("#");
-          break;
-        default:  // Should be impossible, but let's be safe
-          std::cerr << "Unexpected file type: " << file.extension() << std::endl;
-          return -1;
-          break;
-      }
-      if (comment_position == std::string::npos) {
+[[nodiscard]] int Parser::RecursivelyParseFiles(
+    std::filesystem::path current_file) {
+  if (std::filesystem::is_directory(current_file)) {
+    for (const auto& entry :
+         std::filesystem::directory_iterator(current_file)) {
+      int result = this->RecursivelyParseFiles(entry);
+      if (result == -1) {
+        return -1;
+      } else if (result == 1) {
         continue;
-      }
-
-      todo_position = line.find("TODO", comment_position);
-      fixme_position = line.find("FIXME", comment_position);
-      if (todo_position != std::string::npos &&
-          comment_position < todo_position) {
-        std::cout << "TODO Found:" << std::endl
-                  << "File: " << file << std::endl
-                  << "Line Number: " << line_count << std::endl
-                  << "Line: " << line << std::endl
-                  << std::endl;
-        todo_count++;
-      }
-
-      if (fixme_position != std::string::npos &&
-          comment_position < fixme_position) {
-        std::cout << "FIXME Found:" << std::endl
-                  << "File: " << file << std::endl
-                  << "Line Number: " << line_count << std::endl
-                  << "Line: " << line << std::endl
-                  << std::endl;
-        fixme_count++;
       }
     }
   }
 
-  std::cout << "Files Profiled: " << file_count << std::endl;
-  std::cout << "TODOs Found: " << todo_count << std::endl;  // TODO test
-  std::cout << "FIXMEs Found: " << fixme_count << std::endl << std::endl;
+  if (!this->IsValidFile(current_file)) {
+    return 1;
+  }
+
+  this->file_count_++;
+  this->line_count_ = 0;
+  this->file_stream_ = std::fstream(current_file);
+
+  while (std::getline(this->file_stream_, this->line_)) {
+    this->line_count_++;
+    switch (this->comment_format_) {
+      case CommentFormat::DoubleSlash:
+        this->comment_position_ = this->line_.find("//");
+        break;
+      case CommentFormat::PoundSign:
+        this->comment_position_ = this->line_.find("#");
+        break;
+      default:  // Should be impossible, but let's be safe
+        std::cerr << "Unexpected file type: " << current_file.extension()
+                  << std::endl;
+        return -1;
+        break;
+    }
+    if (this->comment_position_ == std::string::npos) {
+      continue;
+    }
+
+    this->todo_position_ = this->line_.find("TODO", this->comment_position_);
+    this->fixme_position_ = this->line_.find("FIXME", this->comment_position_);
+    if (this->todo_position_ != std::string::npos &&
+        this->comment_position_ < this->todo_position_) {
+      std::cout << "TODO Found:" << std::endl
+                << "File: " << current_file << std::endl
+                << "Line Number: " << this->line_count_ << std::endl
+                << "Line: " << this->line_ << std::endl
+                << std::endl;
+      this->todo_count_++;
+    }
+
+    if (this->fixme_position_ != std::string::npos &&
+        this->comment_position_ < this->fixme_position_) {
+      std::cout << "FIXME Found:" << std::endl
+                << "File: " << current_file << std::endl
+                << "Line Number: " << this->line_count_ << std::endl
+                << "Line: " << this->line_ << std::endl
+                << std::endl;
+      this->todo_count_++;
+    }
+  }
+
+  return 0;
+}
+
+[[nodiscard]] int Parser::ParseFiles(std::filesystem::path current_file) {
+  int result = this->RecursivelyParseFiles(current_file);
+  if (result == -1) {
+    return -1;
+  }
+  std::cout << "Files Profiled: " << this->file_count_ << std::endl;
+  std::cout << "TODOs Found: " << this->todo_count_ << std::endl;  // TODO test
+  std::cout << "FIXMEs Found: " << this->fixme_count_ << std::endl << std::endl;
+
   return 0;
 }
 }  // namespace parser_info
