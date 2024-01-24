@@ -25,5 +25,5 @@ int main(int argc, char** argv) {
 
   parser_info::Parser parser(std::move(files));
 
-  parser.ParseFiles();
+  return parser.ParseFiles();
 }
