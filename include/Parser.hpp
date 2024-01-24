@@ -8,6 +8,7 @@ class Parser {
  public:
   Parser(const std::vector<std::filesystem::path> files);
   void ListFiles() const;
+  void ParseFiles() const;
 
  private:
   const std::vector<std::filesystem::path> files_;

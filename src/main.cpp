@@ -23,5 +23,7 @@ int main(int argc, char** argv) {
 
   Parser parser(std::move(files));
 
+  parser.ParseFiles();
+
   parser.ListFiles();
 }

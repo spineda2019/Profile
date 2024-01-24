@@ -12,3 +12,7 @@ void Parser::ListFiles() const {
     std::cout << item << std::endl;
   }
 }
+
+void Parser::ParseFiles() const {
+  // TODO
+}
