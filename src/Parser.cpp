@@ -33,11 +33,14 @@ void Parser::ParseFiles() const {
 
     while (std::getline(file_stream, line)) {
       line_count++;
-      todo_position = line.find("TODO");
-      fixme_position = line.find("FIXME");
       comment_position = line.find("//");
+      if (comment_position == std::string::npos) {
+        continue;
+      }
+
+      todo_position = line.find("TODO", comment_position);
+      fixme_position = line.find("FIXME", comment_position);
       if (todo_position != std::string::npos &&
-          comment_position != std::string::npos &&
           comment_position < todo_position) {
         std::cout << "TODO Found:" << std::endl
                   << "File: " << file << std::endl
@@ -48,7 +51,6 @@ void Parser::ParseFiles() const {
       }
 
       if (fixme_position != std::string::npos &&
-          comment_position != std::string::npos &&
           comment_position < fixme_position) {
         std::cout << "FIXME Found:" << std::endl
                   << "File: " << file << std::endl
@@ -60,6 +62,6 @@ void Parser::ParseFiles() const {
     }
   }
 
-  std::cout << "TODOs Found: " << todo_count << std::endl;  // TODO test 
+  std::cout << "TODOs Found: " << todo_count << std::endl;  // TODO test
   std::cout << "FIXMEs Found: " << fixme_count << std::endl;
 }
