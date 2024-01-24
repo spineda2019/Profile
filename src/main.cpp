@@ -9,6 +9,7 @@ int main(int argc, char** argv) {
     std::cerr << "USE: Profile <DIRECTORY>" << std::endl;
     return -1;
   }
+
   std::filesystem::path directory(argv[1]);
 
   if (!directory_validation::DirectoryExists(directory)) {
