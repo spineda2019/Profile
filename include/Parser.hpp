@@ -7,9 +7,10 @@
 
 namespace parser_info {
 
-enum CommentFormat {
+enum class CommentFormat : std::uint8_t {
   DoubleSlash,
   PoundSign,
+  None,
 };
 
 class Parser {
@@ -19,7 +20,8 @@ class Parser {
   void ParseFiles() const;
 
  private:
-  const bool IsValidFile(const std::filesystem::path& file) const;
+  const bool IsValidFile(const std::filesystem::path& file,
+                         CommentFormat& comment_format) const;
   const std::vector<std::filesystem::path> files_;
   static constexpr std::array<const char*, 8> double_slash_extensions_{
       ".c", ".cpp", ".h", ".hpp", ".js", ".rs", ".ts", ".zig"};
