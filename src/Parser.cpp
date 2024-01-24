@@ -63,5 +63,5 @@ void Parser::ParseFiles() const {
   }
 
   std::cout << "TODOs Found: " << todo_count << std::endl;  // TODO test
-  std::cout << "FIXMEs Found: " << fixme_count << std::endl;
+  std::cout << "FIXMEs Found: " << fixme_count << std::endl << std::endl;
 }
