@@ -39,7 +39,7 @@ const bool Parser::IsValidFile(const std::filesystem::path& file,
   }
 }
 
-void Parser::ParseFiles() const {
+[[nodiscard]] int Parser::ParseFiles() const {
   std::fstream file_stream{};
   std::string line{};
 
@@ -64,7 +64,18 @@ void Parser::ParseFiles() const {
 
     while (std::getline(file_stream, line)) {
       line_count++;
-      comment_position = line.find("//");
+      switch (comment_format) {
+        case CommentFormat::DoubleSlash:
+          comment_position = line.find("//");
+          break;
+        case CommentFormat::PoundSign:
+          comment_position = line.find("#");
+          break;
+        default:  // Should be impossible, but let's be safe
+          std::cerr << "Unexpected file type: " << file.extension() << std::endl;
+          return -1;
+          break;
+      }
       if (comment_position == std::string::npos) {
         continue;
       }
@@ -96,5 +107,6 @@ void Parser::ParseFiles() const {
   std::cout << "Files Profiled: " << file_count << std::endl;
   std::cout << "TODOs Found: " << todo_count << std::endl;  // TODO test
   std::cout << "FIXMEs Found: " << fixme_count << std::endl << std::endl;
+  return 0;
 }
 }  // namespace parser_info

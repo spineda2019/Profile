@@ -17,7 +17,7 @@ class Parser {
  public:
   Parser(const std::vector<std::filesystem::path> files);
   void ListFiles() const;
-  void ParseFiles() const;
+  [[nodiscard]] int ParseFiles() const;
 
  private:
   const bool IsValidFile(const std::filesystem::path& file,
