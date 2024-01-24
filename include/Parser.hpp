@@ -5,6 +5,8 @@
 #include <filesystem>
 #include <vector>
 
+namespace parser_info {
+
 enum CommentFormat {
   DoubleSlash,
   PoundSign,
@@ -23,4 +25,5 @@ class Parser {
       ".c", ".cpp", ".h", ".hpp", ".js", ".rs", ".ts", ".zig"};
   static constexpr std::array<const char*, 1> pound_sign_extensions_{".py"};
 };
+}  // namespace parser_info
 #endif  // PROFILE_INCLUDE_PARSER_HPP

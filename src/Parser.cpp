@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+namespace parser_info {
+
 Parser::Parser(const std::vector<std::filesystem::path> files)
     : files_(std::move(files)) {}
 
@@ -84,4 +86,5 @@ void Parser::ParseFiles() const {
 
   std::cout << "TODOs Found: " << todo_count << std::endl;  // TODO test
   std::cout << "FIXMEs Found: " << fixme_count << std::endl << std::endl;
+}
 }

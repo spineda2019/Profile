@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
   std::vector<std::filesystem::path> files{};
   directory_validation::GetFilesToProfile(directory, files);
 
-  Parser parser(std::move(files));
+  parser_info::Parser parser(std::move(files));
 
   parser.ParseFiles();
 }
