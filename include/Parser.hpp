@@ -5,6 +5,11 @@
 #include <filesystem>
 #include <vector>
 
+enum CommentFormat {
+  DoubleSlash,
+  PoundSign,
+};
+
 class Parser {
  public:
   Parser(const std::vector<std::filesystem::path> files);
