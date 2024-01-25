@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  std::filesystem::path directory(argv[1]);
+  std::filesystem::path directory(std::filesystem::absolute(argv[1]));
 
   if (!directory_validation::DirectoryExists(directory)) {
     std::cerr << "FATAL: Directory " << directory << " does not exist!"
