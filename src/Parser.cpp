@@ -108,7 +108,8 @@ const bool Parser::IsValidFile(const std::filesystem::path& file) {
   return 0;
 }
 
-[[nodiscard]] int Parser::ParseFiles(const std::filesystem::path& current_file) {
+[[nodiscard]] int Parser::ParseFiles(
+    const std::filesystem::path& current_file) {
   int result = this->RecursivelyParseFiles(current_file);
   if (result == -1) {
     return -1;
