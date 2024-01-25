@@ -18,7 +18,7 @@ enum class CommentFormat : std::uint8_t {
 class Parser {
  public:
   Parser();
-  [[nodiscard]] int ParseFiles(std::filesystem::path current_file);
+  [[nodiscard]] int ParseFiles(const std::filesystem::path& current_file);
 
  private:
   const bool IsValidFile(const std::filesystem::path& file);
