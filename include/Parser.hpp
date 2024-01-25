@@ -41,6 +41,9 @@ class Parser {
 
   CommentFormat comment_format_;
 
+  static constexpr std::uint8_t INVALID_FILE_FOUND = 1;
+  static constexpr std::uint8_t EXISTING_SYMLINK_FOUND = 2;
+
   static constexpr std::array<const char*, 8> double_slash_extensions_{
       ".c", ".cpp", ".h", ".hpp", ".js", ".rs", ".ts", ".zig"};
   static constexpr std::array<const char*, 1> pound_sign_extensions_{".py"};
