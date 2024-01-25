@@ -3,9 +3,9 @@
 
 #include <array>
 #include <filesystem>
-#include <vector>
 #include <fstream>
 #include <string>
+#include <vector>
 
 namespace parser_info {
 
@@ -22,7 +22,10 @@ class Parser {
 
  private:
   const bool IsValidFile(const std::filesystem::path& file);
-  [[nodiscard]] int RecursivelyParseFiles(const std::filesystem::path& current_file);
+  [[nodiscard]] int RecursivelyParseFiles(
+      const std::filesystem::path& current_file);
+
+  std::vector<std::filesystem::path> visited_symbolic_links_;
 
   std::fstream file_stream_;
   std::string line_;

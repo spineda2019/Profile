@@ -11,7 +11,8 @@
 namespace parser_info {
 
 Parser::Parser()
-    : file_stream_{},
+    : visited_symbolic_links_{},
+      file_stream_{},
       line_{},
       line_count_{},
       todo_count_(0),
@@ -44,6 +45,8 @@ const bool Parser::IsValidFile(const std::filesystem::path& file) {
 [[nodiscard]] int Parser::RecursivelyParseFiles(
     const std::filesystem::path& current_file) {
   if (std::filesystem::is_directory(current_file)) {
+    // TODO: Check if its a symlink. If it is, make sure we haven't visited
+    // already
     for (const auto& entry :
          std::filesystem::directory_iterator(current_file)) {
       int result = this->RecursivelyParseFiles(entry);
