@@ -41,6 +41,7 @@ class Parser {
 
   CommentFormat comment_format_;
 
+  static constexpr std::uint8_t FATAL_UNEXPECTED_FILETYPE = 3;
   static constexpr std::uint8_t INVALID_FILE_FOUND = 1;
   static constexpr std::uint8_t EXISTING_SYMLINK_FOUND = 2;
 
@@ -49,9 +50,5 @@ class Parser {
   static constexpr std::array<const char*, 1> pound_sign_extensions_{".py"};
 };
 
-class BadFileException : public std::exception {
- public:
-  const char* what() const noexcept;
-};
 }  // namespace parser_info
 #endif  // PROFILE_INCLUDE_PARSER_HPP

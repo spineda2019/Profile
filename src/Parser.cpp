@@ -52,8 +52,8 @@ const bool Parser::IsValidFile(const std::filesystem::path& file) {
     for (const auto& entry :
          std::filesystem::directory_iterator(current_file)) {
       int result = this->RecursivelyParseFiles(entry);
-      if (result == -1) {
-        return -1;
+      if (result == Parser::FATAL_UNEXPECTED_FILETYPE) {
+        return Parser::FATAL_UNEXPECTED_FILETYPE;
       } else if (result == Parser::INVALID_FILE_FOUND ||
                  result == Parser::EXISTING_SYMLINK_FOUND) {
         continue;
@@ -81,7 +81,7 @@ const bool Parser::IsValidFile(const std::filesystem::path& file) {
       default:  // Should be impossible, but let's be safe
         std::cerr << "Unexpected file type: " << current_file.extension()
                   << std::endl;
-        return -1;
+        return Parser::FATAL_UNEXPECTED_FILETYPE;
         break;
     }
     if (this->comment_position_ == std::string::npos) {
@@ -117,8 +117,8 @@ const bool Parser::IsValidFile(const std::filesystem::path& file) {
 [[nodiscard]] int Parser::ParseFiles(
     const std::filesystem::path& current_file) {
   int result = this->RecursivelyParseFiles(current_file);
-  if (result == -1) {
-    return -1;
+  if (result == Parser::FATAL_UNEXPECTED_FILETYPE) {
+    return Parser::FATAL_UNEXPECTED_FILETYPE;
   }
   std::cout << "Files Profiled: " << this->file_count_ << std::endl;
   std::cout << "TODOs Found: " << this->todo_count_ << std::endl;  // TODO test
