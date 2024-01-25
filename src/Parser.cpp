@@ -45,21 +45,28 @@ const bool Parser::IsValidFile(const std::filesystem::path& file) {
 [[nodiscard]] int Parser::RecursivelyParseFiles(
     const std::filesystem::path& current_file) {
   if (std::filesystem::is_directory(current_file)) {
-    // TODO: Check if its a symlink. If it is, make sure we haven't visited
-    // already
+    if (std::filesystem::is_symlink(current_file)) {
+      if (std::find(this->visited_symbolic_links_.begin(),
+                    this->visited_symbolic_links_.end(),
+                    current_file) != this->visited_symbolic_links_.end()) {
+        return Parser::EXISTING_SYMLINK_FOUND;
+      }
+    }
+
     for (const auto& entry :
          std::filesystem::directory_iterator(current_file)) {
       int result = this->RecursivelyParseFiles(entry);
       if (result == -1) {
         return -1;
-      } else if (result == 1) {
+      } else if (result == Parser::INVALID_FILE_FOUND ||
+                 result == Parser::EXISTING_SYMLINK_FOUND) {
         continue;
       }
     }
   }
 
   if (!this->IsValidFile(current_file)) {
-    return 1;
+    return Parser::INVALID_FILE_FOUND;
   }
 
   this->file_count_++;
