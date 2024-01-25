@@ -48,5 +48,10 @@ class Parser {
       ".c", ".cpp", ".h", ".hpp", ".js", ".rs", ".ts", ".zig"};
   static constexpr std::array<const char*, 1> pound_sign_extensions_{".py"};
 };
+
+class BadFileException : public std::exception {
+ public:
+  const char* what() const noexcept;
+};
 }  // namespace parser_info
 #endif  // PROFILE_INCLUDE_PARSER_HPP
