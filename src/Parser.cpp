@@ -102,26 +102,26 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
     fixme_position = line.find("FIXME", comment_position);
     if (todo_position != std::string::npos &&
         comment_position < todo_position) {
-      std::cout << "TODO Found:" << std::endl
-                << "File: " << current_file << std::endl
-                << "Line Number: " << line_count << std::endl
-                << "Line: " << line << std::endl
-                << std::endl;
       {
         std::lock_guard lock(this->data_lock_);
+        std::cout << "TODO Found:" << std::endl
+                  << "File: " << current_file << std::endl
+                  << "Line Number: " << line_count << std::endl
+                  << "Line: " << line << std::endl
+                  << std::endl;
         this->todo_count_++;
       }
     }
 
     if (fixme_position != std::string::npos &&
         comment_position < fixme_position) {
-      std::cout << "FIXME Found:" << std::endl
-                << "File: " << current_file << std::endl
-                << "Line Number: " << line_count << std::endl
-                << "Line: " << line << std::endl
-                << std::endl;
       {
         std::lock_guard lock(this->data_lock_);
+        std::cout << "FIXME Found:" << std::endl
+                  << "File: " << current_file << std::endl
+                  << "Line Number: " << line_count << std::endl
+                  << "Line: " << line << std::endl
+                  << std::endl;
         this->todo_count_++;
       }
     }
