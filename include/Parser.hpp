@@ -5,9 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
-#include <mutex>
 #include <string>
-#include <thread>
 #include <vector>
 
 namespace parser_info {
@@ -15,7 +13,7 @@ namespace parser_info {
 class UnexpectedFileTypeException : std::exception {
  public:
   UnexpectedFileTypeException(std::filesystem::path bad_file);
-  const char* what() noexcept;
+  const char* what() const;
 
  private:
   std::filesystem::path bad_file_;
@@ -36,9 +34,6 @@ class Parser {
   const bool IsValidFile(const std::filesystem::path& file,
                          CommentFormat& comment_format) const;
   void RecursivelyParseFiles(const std::filesystem::path& current_file);
-
-  std::vector<std::thread> directory_threads_;
-  std::mutex data_lock_;
 
   std::size_t todo_count_;
   std::size_t fixme_count_;
