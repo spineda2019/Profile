@@ -53,7 +53,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
     for (const auto& entry :
          std::filesystem::directory_iterator(current_file)) {
       if (std::filesystem::is_directory(entry)) {
-        directories.push_back(entry);
+        directories.push_back(std::move(entry));
       } else {
         this->RecursivelyParseFiles(entry);
       }
