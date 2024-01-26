@@ -5,9 +5,10 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <mutex>
 #include <string>
-#include <vector>
 #include <thread>
+#include <vector>
 
 namespace parser_info {
 
@@ -32,24 +33,16 @@ class Parser {
   [[nodiscard]] int ParseFiles(const std::filesystem::path& current_file);
 
  private:
-  const bool IsValidFile(const std::filesystem::path& file);
+  const bool IsValidFile(const std::filesystem::path& file,
+                         CommentFormat& comment_format) const;
   void RecursivelyParseFiles(const std::filesystem::path& current_file);
 
-  std::unique_ptr<std::vector<std::thread>> directory_threads_;
+  std::vector<std::thread> directory_threads_;
+  std::mutex data_lock_;
 
-  std::fstream file_stream_;
-  std::string line_;
-
-  std::size_t line_count_;
   std::size_t todo_count_;
   std::size_t fixme_count_;
   std::size_t file_count_;
-
-  std::size_t todo_position_;
-  std::size_t fixme_position_;
-  std::size_t comment_position_;
-
-  CommentFormat comment_format_;
 
   static constexpr std::uint8_t FATAL_UNKNOWN_ERROR = 4;
   static constexpr std::uint8_t FATAL_UNEXPECTED_FILETYPE = 3;

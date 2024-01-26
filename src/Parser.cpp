@@ -6,22 +6,17 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace parser_info {
 
 Parser::Parser()
     : directory_threads_{},
-      file_stream_{},
-      line_{},
-      line_count_{},
+      data_lock_{},
       todo_count_(0),
       fixme_count_(0),
-      file_count_(0),
-      todo_position_{},
-      fixme_position_{},
-      comment_position_{},
-      comment_format_{} {}
+      file_count_(0) {}
 
 UnexpectedFileTypeException::UnexpectedFileTypeException(
     std::filesystem::path bad_file)
@@ -33,21 +28,22 @@ const char* UnexpectedFileTypeException::what() noexcept {
   return error_message.str().c_str();
 }
 
-const bool Parser::IsValidFile(const std::filesystem::path& file) {
+const bool Parser::IsValidFile(const std::filesystem::path& file,
+                               CommentFormat& comment_format) const {
   std::filesystem::path extension(file.extension());
 
   if (std::find(this->double_slash_extensions_.begin(),
                 this->double_slash_extensions_.end(),
                 extension) != this->double_slash_extensions_.end()) {
-    this->comment_format_ = CommentFormat::DoubleSlash;
+    comment_format = CommentFormat::DoubleSlash;
     return true;
   } else if (std::find(this->pound_sign_extensions_.begin(),
                        this->pound_sign_extensions_.end(),
                        extension) != this->pound_sign_extensions_.end()) {
-    this->comment_format_ = CommentFormat::PoundSign;
+    comment_format = CommentFormat::PoundSign;
     return true;
   } else {
-    this->comment_format_ = CommentFormat::None;
+    comment_format = CommentFormat::None;
     return false;
   }
 }
@@ -60,26 +56,36 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   if (std::filesystem::is_directory(current_file)) {
     for (const auto& entry :
          std::filesystem::directory_iterator(current_file)) {
-      this->RecursivelyParseFiles(entry);
+      this->directory_threads_.push_back(
+          std::thread(&Parser::RecursivelyParseFiles, this, entry));
     }
   }
 
-  if (!this->IsValidFile(current_file)) {
+  std::fstream file_stream(current_file);
+  std::size_t line_count = 0;
+  std::string line{};
+  CommentFormat comment_format{};
+  std::size_t comment_position{};
+  std::size_t todo_position{};
+  std::size_t fixme_position{};
+
+  if (!this->IsValidFile(current_file, comment_format)) {
     return;
   }
 
-  this->file_count_++;
-  this->line_count_ = 0;
-  this->file_stream_ = std::fstream(current_file);
+  {
+    std::lock_guard lock(this->data_lock_);
+    this->file_count_++;
+  }
 
-  while (std::getline(this->file_stream_, this->line_)) {
-    this->line_count_++;
-    switch (this->comment_format_) {
+  while (std::getline(file_stream, line)) {
+    line_count++;
+    switch (comment_format) {
       case CommentFormat::DoubleSlash:
-        this->comment_position_ = this->line_.find("//");
+        comment_position = line.find("//");
         break;
       case CommentFormat::PoundSign:
-        this->comment_position_ = this->line_.find("#");
+        comment_position = line.find("#");
         break;
       default:  // Should be impossible, but let's be safe
         std::cerr << "Unexpected file type: " << current_file.extension()
@@ -88,30 +94,36 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
         throw file_exception;
         break;
     }
-    if (this->comment_position_ == std::string::npos) {
+    if (comment_position == std::string::npos) {
       continue;
     }
 
-    this->todo_position_ = this->line_.find("TODO", this->comment_position_);
-    this->fixme_position_ = this->line_.find("FIXME", this->comment_position_);
-    if (this->todo_position_ != std::string::npos &&
-        this->comment_position_ < this->todo_position_) {
+    todo_position = line.find("TODO", comment_position);
+    fixme_position = line.find("FIXME", comment_position);
+    if (todo_position != std::string::npos &&
+        comment_position < todo_position) {
       std::cout << "TODO Found:" << std::endl
                 << "File: " << current_file << std::endl
-                << "Line Number: " << this->line_count_ << std::endl
-                << "Line: " << this->line_ << std::endl
+                << "Line Number: " << line_count << std::endl
+                << "Line: " << line << std::endl
                 << std::endl;
-      this->todo_count_++;
+      {
+        std::lock_guard lock(this->data_lock_);
+        this->todo_count_++;
+      }
     }
 
-    if (this->fixme_position_ != std::string::npos &&
-        this->comment_position_ < this->fixme_position_) {
+    if (fixme_position != std::string::npos &&
+        comment_position < fixme_position) {
       std::cout << "FIXME Found:" << std::endl
                 << "File: " << current_file << std::endl
-                << "Line Number: " << this->line_count_ << std::endl
-                << "Line: " << this->line_ << std::endl
+                << "Line Number: " << line_count << std::endl
+                << "Line: " << line << std::endl
                 << std::endl;
-      this->todo_count_++;
+      {
+        std::lock_guard lock(this->data_lock_);
+        this->todo_count_++;
+      }
     }
   }
 }
@@ -120,6 +132,12 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
     const std::filesystem::path& current_file) {
   try {
     this->RecursivelyParseFiles(current_file);
+
+    for (auto& thread : this->directory_threads_) {
+      if (thread.joinable()) {
+        thread.join();
+      }
+    }
 
     std::cout << "Files Profiled: " << this->file_count_ << std::endl;
     std::cout << "TODOs Found: " << this->todo_count_
