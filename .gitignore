@@ -2,6 +2,7 @@
 out/
 .vs/
 build/
+linux_build/
 log.txt
 # Prerequisites
 *.d
