@@ -65,18 +65,18 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
                   });
   }
 
-  std::fstream file_stream(current_file);
-  std::size_t line_count = 0;
-  std::string line{};
   CommentFormat comment_format{};
-  std::size_t comment_position{};
-  std::size_t todo_position{};
-  std::size_t fixme_position{};
 
   if (!this->IsValidFile(current_file, comment_format)) {
     return;
   }
 
+  std::fstream file_stream(current_file);
+  std::size_t line_count = 0;
+  std::string line{};
+  std::size_t comment_position{};
+  std::size_t todo_position{};
+  std::size_t fixme_position{};
   this->file_count_++;
 
   while (std::getline(file_stream, line)) {
