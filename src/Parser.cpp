@@ -58,7 +58,8 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
         this->RecursivelyParseFiles(entry);
       }
     }
-    std::for_each(std::execution::par_unseq, directories.begin(), directories.end(),
+    std::for_each(std::execution::par_unseq, directories.begin(),
+                  directories.end(),
                   [this](const std::filesystem::path& directory) {
                     this->RecursivelyParseFiles(directory);
                   });
