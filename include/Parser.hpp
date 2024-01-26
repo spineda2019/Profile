@@ -23,8 +23,7 @@ class Parser {
 
  private:
   const bool IsValidFile(const std::filesystem::path& file);
-  [[nodiscard]] int RecursivelyParseFiles(
-      const std::filesystem::path& current_file);
+  void RecursivelyParseFiles(const std::filesystem::path& current_file);
 
   std::unordered_set<std::thread> directory_threads_;
 
@@ -42,6 +41,7 @@ class Parser {
 
   CommentFormat comment_format_;
 
+  static constexpr std::uint8_t FATAL_UNKNOWN_ERROR = 4;
   static constexpr std::uint8_t FATAL_UNEXPECTED_FILETYPE = 3;
   static constexpr std::uint8_t INVALID_FILE_FOUND = 1;
   static constexpr std::uint8_t EXISTING_SYMLINK_FOUND = 2;
