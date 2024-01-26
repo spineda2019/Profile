@@ -4,11 +4,21 @@
 #include <array>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <string>
+#include <vector>
 #include <thread>
-#include <unordered_set>
 
 namespace parser_info {
+
+class UnexpectedFileTypeException : std::exception {
+ public:
+  UnexpectedFileTypeException(std::filesystem::path bad_file);
+  const char* what() noexcept;
+
+ private:
+  std::filesystem::path bad_file_;
+};
 
 enum class CommentFormat : std::uint8_t {
   DoubleSlash,
@@ -25,7 +35,7 @@ class Parser {
   const bool IsValidFile(const std::filesystem::path& file);
   void RecursivelyParseFiles(const std::filesystem::path& current_file);
 
-  std::unordered_set<std::thread> directory_threads_;
+  std::unique_ptr<std::vector<std::thread>> directory_threads_;
 
   std::fstream file_stream_;
   std::string line_;
