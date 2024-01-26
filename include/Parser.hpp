@@ -40,9 +40,7 @@ class Parser {
   std::size_t file_count_;
 
   static constexpr std::uint8_t FATAL_UNKNOWN_ERROR = 4;
-  static constexpr std::uint8_t FATAL_UNEXPECTED_FILETYPE = 3;
-  static constexpr std::uint8_t INVALID_FILE_FOUND = 1;
-  static constexpr std::uint8_t EXISTING_SYMLINK_FOUND = 2;
+  static constexpr std::uint8_t SUCCESS = 0;
 
   static constexpr std::array<const char*, 8> double_slash_extensions_{
       ".c", ".cpp", ".h", ".hpp", ".js", ".rs", ".ts", ".zig"};

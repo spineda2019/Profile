@@ -129,7 +129,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   try {
     this->RecursivelyParseFiles(current_file);
 
-    return_code = 0;
+    return_code = Parser::SUCCESS;
   } catch (const UnexpectedFileTypeException& e) {
     std::cout << e.what() << std::endl;
   } catch (const std::exception& e) {
