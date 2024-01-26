@@ -5,7 +5,8 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
-#include <vector>
+#include <thread>
+#include <unordered_set>
 
 namespace parser_info {
 
@@ -25,7 +26,7 @@ class Parser {
   [[nodiscard]] int RecursivelyParseFiles(
       const std::filesystem::path& current_file);
 
-  std::vector<std::filesystem::path> visited_symbolic_links_;
+  std::unordered_set<std::thread> directory_threads_;
 
   std::fstream file_stream_;
   std::string line_;
