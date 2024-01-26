@@ -11,7 +11,7 @@
 namespace parser_info {
 
 Parser::Parser()
-    : visited_symbolic_links_{},
+    : directory_threads_{},
       file_stream_{},
       line_{},
       line_count_{},
@@ -22,6 +22,16 @@ Parser::Parser()
       fixme_position_{},
       comment_position_{},
       comment_format_{} {}
+
+UnexpectedFileTypeException::UnexpectedFileTypeException(
+    std::filesystem::path bad_file)
+    : bad_file_(bad_file) {}
+
+const char* UnexpectedFileTypeException::what() noexcept {
+  std::stringstream error_message("FATAL: Unexpected filetype found: ");
+  error_message << this->bad_file_;
+  return error_message.str().c_str();
+}
 
 const bool Parser::IsValidFile(const std::filesystem::path& file) {
   std::filesystem::path extension(file.extension());
@@ -42,27 +52,20 @@ const bool Parser::IsValidFile(const std::filesystem::path& file) {
   }
 }
 
-[[nodiscard]] int Parser::RecursivelyParseFiles(
-    const std::filesystem::path& current_file) {
+void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   if (std::filesystem::is_symlink(current_file)) {
-    return Parser::INVALID_FILE_FOUND;
+    return;
   }
 
   if (std::filesystem::is_directory(current_file)) {
     for (const auto& entry :
          std::filesystem::directory_iterator(current_file)) {
-      int result = this->RecursivelyParseFiles(entry);
-      if (result == Parser::FATAL_UNEXPECTED_FILETYPE) {
-        return Parser::FATAL_UNEXPECTED_FILETYPE;
-      } else if (result == Parser::INVALID_FILE_FOUND ||
-                 result == Parser::EXISTING_SYMLINK_FOUND) {
-        continue;
-      }
+      this->RecursivelyParseFiles(entry);
     }
   }
 
   if (!this->IsValidFile(current_file)) {
-    return Parser::INVALID_FILE_FOUND;
+    return;
   }
 
   this->file_count_++;
@@ -81,7 +84,8 @@ const bool Parser::IsValidFile(const std::filesystem::path& file) {
       default:  // Should be impossible, but let's be safe
         std::cerr << "Unexpected file type: " << current_file.extension()
                   << std::endl;
-        return Parser::FATAL_UNEXPECTED_FILETYPE;
+        UnexpectedFileTypeException file_exception(current_file);
+        throw file_exception;
         break;
     }
     if (this->comment_position_ == std::string::npos) {
@@ -110,20 +114,29 @@ const bool Parser::IsValidFile(const std::filesystem::path& file) {
       this->todo_count_++;
     }
   }
-
-  return 0;
 }
 
 [[nodiscard]] int Parser::ParseFiles(
     const std::filesystem::path& current_file) {
-  int result = this->RecursivelyParseFiles(current_file);
-  if (result == Parser::FATAL_UNEXPECTED_FILETYPE) {
-    return Parser::FATAL_UNEXPECTED_FILETYPE;
-  }
-  std::cout << "Files Profiled: " << this->file_count_ << std::endl;
-  std::cout << "TODOs Found: " << this->todo_count_ << std::endl;  // TODO test
-  std::cout << "FIXMEs Found: " << this->fixme_count_ << std::endl << std::endl;
+  try {
+    this->RecursivelyParseFiles(current_file);
 
-  return 0;
+    std::cout << "Files Profiled: " << this->file_count_ << std::endl;
+    std::cout << "TODOs Found: " << this->todo_count_
+              << std::endl;  // TODO test
+    std::cout << "FIXMEs Found: " << this->fixme_count_ << std::endl
+              << std::endl;
+
+    return 0;
+  } catch (const std::exception& e) {
+    std::cout << "Unexpected Exception Thrown: " << e.what() << std::endl;
+    std::cout << "Files Profiled: " << this->file_count_ << std::endl;
+    std::cout << "TODOs Found: " << this->todo_count_
+              << std::endl;  // TODO test
+    std::cout << "FIXMEs Found: " << this->fixme_count_ << std::endl
+              << std::endl;
+
+    return Parser::FATAL_UNKNOWN_ERROR;
+  }
 }
 }  // namespace parser_info
