@@ -1,28 +1,23 @@
 #include "Parser.hpp"
 
 #include <algorithm>
+#include <execution>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <thread>
 #include <vector>
 
 namespace parser_info {
 
-Parser::Parser()
-    : directory_threads_{},
-      data_lock_{},
-      todo_count_(0),
-      fixme_count_(0),
-      file_count_(0) {}
+Parser::Parser() : todo_count_(0), fixme_count_(0), file_count_(0) {}
 
 UnexpectedFileTypeException::UnexpectedFileTypeException(
     std::filesystem::path bad_file)
     : bad_file_(bad_file) {}
 
-const char* UnexpectedFileTypeException::what() noexcept {
+const char* UnexpectedFileTypeException::what() const {
   std::stringstream error_message("FATAL: Unexpected filetype found: ");
   error_message << this->bad_file_;
   return error_message.str().c_str();
@@ -54,11 +49,19 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   }
 
   if (std::filesystem::is_directory(current_file)) {
+    std::vector<std::filesystem::path> directories{};
     for (const auto& entry :
          std::filesystem::directory_iterator(current_file)) {
-      this->directory_threads_.push_back(
-          std::thread(&Parser::RecursivelyParseFiles, this, entry));
+      if (std::filesystem::is_directory(entry)) {
+        directories.push_back(entry);
+      } else {
+        this->RecursivelyParseFiles(entry);
+      }
     }
+    std::for_each(std::execution::par, directories.begin(), directories.end(),
+                  [this](const std::filesystem::path& directory) {
+                    this->RecursivelyParseFiles(directory);
+                  });
   }
 
   std::fstream file_stream(current_file);
@@ -73,10 +76,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
     return;
   }
 
-  {
-    std::lock_guard lock(this->data_lock_);
-    this->file_count_++;
-  }
+  this->file_count_++;
 
   while (std::getline(file_stream, line)) {
     line_count++;
@@ -102,59 +102,46 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
     fixme_position = line.find("FIXME", comment_position);
     if (todo_position != std::string::npos &&
         comment_position < todo_position) {
-      {
-        std::lock_guard lock(this->data_lock_);
-        std::cout << "TODO Found:" << std::endl
-                  << "File: " << current_file << std::endl
-                  << "Line Number: " << line_count << std::endl
-                  << "Line: " << line << std::endl
-                  << std::endl;
-        this->todo_count_++;
-      }
+      std::cout << "TODO Found:" << std::endl
+                << "File: " << current_file << std::endl
+                << "Line Number: " << line_count << std::endl
+                << "Line: " << line << std::endl
+                << std::endl;
+      this->todo_count_++;
     }
 
     if (fixme_position != std::string::npos &&
         comment_position < fixme_position) {
-      {
-        std::lock_guard lock(this->data_lock_);
-        std::cout << "FIXME Found:" << std::endl
-                  << "File: " << current_file << std::endl
-                  << "Line Number: " << line_count << std::endl
-                  << "Line: " << line << std::endl
-                  << std::endl;
-        this->todo_count_++;
-      }
+      std::cout << "FIXME Found:" << std::endl
+                << "File: " << current_file << std::endl
+                << "Line Number: " << line_count << std::endl
+                << "Line: " << line << std::endl
+                << std::endl;
+      this->todo_count_++;
     }
   }
 }
 
 [[nodiscard]] int Parser::ParseFiles(
     const std::filesystem::path& current_file) {
+  std::uint8_t return_code{};
   try {
     this->RecursivelyParseFiles(current_file);
 
-    for (auto& thread : this->directory_threads_) {
-      if (thread.joinable()) {
-        thread.join();
-      }
-    }
-
-    std::cout << "Files Profiled: " << this->file_count_ << std::endl;
-    std::cout << "TODOs Found: " << this->todo_count_
-              << std::endl;  // TODO test
-    std::cout << "FIXMEs Found: " << this->fixme_count_ << std::endl
-              << std::endl;
-
-    return 0;
+    return_code = 0;
+  } catch (const UnexpectedFileTypeException& e) {
+    std::cout << e.what() << std::endl;
   } catch (const std::exception& e) {
     std::cout << "Unexpected Exception Thrown: " << e.what() << std::endl;
-    std::cout << "Files Profiled: " << this->file_count_ << std::endl;
-    std::cout << "TODOs Found: " << this->todo_count_
-              << std::endl;  // TODO test
-    std::cout << "FIXMEs Found: " << this->fixme_count_ << std::endl
-              << std::endl;
-
-    return Parser::FATAL_UNKNOWN_ERROR;
+    return_code = Parser::FATAL_UNKNOWN_ERROR;
+  } catch (...) {
+    std::cout << "UNKNOWN EXCEPTION CAUGHT" << std::endl;
+    return_code = Parser::FATAL_UNKNOWN_ERROR;
   }
+
+  std::cout << "Files Profiled: " << this->file_count_ << std::endl;
+  std::cout << "TODOs Found: " << this->todo_count_ << std::endl;  // TODO test
+  std::cout << "FIXMEs Found: " << this->fixme_count_ << std::endl << std::endl;
+  return return_code;
 }
 }  // namespace parser_info
