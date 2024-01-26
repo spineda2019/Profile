@@ -17,7 +17,7 @@ UnexpectedFileTypeException::UnexpectedFileTypeException(
     std::filesystem::path bad_file)
     : bad_file_(bad_file) {}
 
-const char* UnexpectedFileTypeException::what() const {
+const char* UnexpectedFileTypeException::what() const noexcept {
   std::stringstream error_message("FATAL: Unexpected filetype found: ");
   error_message << this->bad_file_;
   return error_message.str().c_str();
