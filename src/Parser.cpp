@@ -81,6 +81,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
 
   while (std::getline(file_stream, line)) {
     line_count++;
+
     switch (comment_format) {
       case CommentFormat::DoubleSlash:
         comment_position = line.find("//");
@@ -95,6 +96,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
         throw file_exception;
         break;
     }
+
     if (comment_position == std::string::npos) {
       continue;
     }
@@ -118,7 +120,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
                 << "Line Number: " << line_count << std::endl
                 << "Line: " << line << std::endl
                 << std::endl;
-      this->todo_count_++;
+      this->fixme_count_++;
     }
   }
 }
