@@ -5,20 +5,21 @@
 #include "directory_validator.hpp"
 
 int main(int argc, char** argv) {
-  if (argc != 2) {
-    std::cerr << "USE: Profile <DIRECTORY>" << std::endl;
-    return -1;
+  std::filesystem::path directory{};
+
+  if (argc < 2) {
+    directory = std::filesystem::absolute(".");
+  } else {
+    std::filesystem::path directory(std::filesystem::absolute(argv[1]));
   }
 
-  std::filesystem::path directory(std::filesystem::absolute(argv[1]));
+  std::cout << "Profiling Directory " << directory << std::endl << std::endl;
 
   if (!directory_validation::DirectoryExists(directory)) {
     std::cerr << "FATAL: Directory " << directory << " does not exist!"
               << std::endl;
     return -1;
   }
-
-  std::cout << "Profiling Directory " << directory << std::endl << std::endl;
 
   parser_info::Parser parser{};
 
