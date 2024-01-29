@@ -146,8 +146,82 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   return return_code;
 }
 
+void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
+                                      std::ofstream& output_markdown) const {
+  if (std::filesystem::is_symlink(current_file)) {
+    return;
+  }
+
+  if (std::filesystem::is_directory(current_file)) {
+    std::vector<std::filesystem::path> directories{};
+    for (const auto& entry :
+         std::filesystem::directory_iterator(current_file)) {
+      if (std::filesystem::is_directory(entry)) {
+        directories.push_back(std::move(entry));
+      } else {
+        this->RecursivelyDocumentFiles(entry, output_markdown);
+      }
+    }
+    std::for_each(
+        std::execution::par_unseq, directories.begin(), directories.end(),
+        [this, &output_markdown](const std::filesystem::path& directory) {
+          this->RecursivelyDocumentFiles(directory, output_markdown);
+        });
+  }
+
+  CommentFormat comment_format{};
+
+  if (!this->IsValidFile(current_file, comment_format)) {
+    return;
+  }
+
+  std::fstream file_stream(current_file);
+  std::string line{};
+  std::size_t comment_position{};
+
+  while (std::getline(file_stream, line)) {
+    switch (comment_format) {
+      case CommentFormat::DoubleSlash:
+        comment_position = line.find("//");
+        break;
+      case CommentFormat::PoundSign:
+        comment_position = line.find("#");
+        break;
+      default:
+        std::cerr << "Unexpected file type: " << current_file.extension()
+                  << std::endl;
+        UnexpectedFileTypeException file_exception(current_file);
+        throw file_exception;
+        break;
+    }
+
+    if (comment_position == std::string::npos) {
+      continue;
+    }
+  }
+}
+
 [[nodiscard]] int Parser::DocumentFiles(
     const std::filesystem::path& root_folder) const {
-  //
+  std::filesystem::path document_path(root_folder);
+  document_path.append("Profile.md");
+
+  std::cout << document_path << std::endl;
+
+  std::ofstream document_file(document_path);
+
+  document_file << "# " << root_folder << std::endl;
+
+  std::uint8_t return_code{};
+
+  try {
+    this->RecursivelyDocumentFiles(root_folder, document_file);
+    return_code = Parser::SUCCESS;
+  } catch (const std::exception& e) {
+    std::cerr << e.what() << std::endl;
+  }
+
+  document_file.close();
+  return return_code;
 }
 }  // namespace parser_info
