@@ -145,4 +145,9 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   std::cout << "FIXMEs Found: " << this->fixme_count_ << std::endl << std::endl;
   return return_code;
 }
+
+[[nodiscard]] int Parser::DocumentFiles(
+    const std::filesystem::path& root_folder) const {
+  //
+}
 }  // namespace parser_info

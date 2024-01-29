@@ -29,6 +29,7 @@ class Parser {
  public:
   Parser();
   [[nodiscard]] int ParseFiles(const std::filesystem::path& current_file);
+  [[nodiscard]] int DocumentFiles(const std::filesystem::path& root_folder) const;
 
  private:
   const bool IsValidFile(const std::filesystem::path& file,
