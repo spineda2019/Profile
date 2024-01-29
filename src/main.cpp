@@ -23,5 +23,11 @@ int main(int argc, char** argv) {
 
   parser_info::Parser parser{};
 
-  return parser.ParseFiles(std::move(directory));
+  int parse_result = parser.ParseFiles(directory);
+  if (parse_result) {
+    return parse_result;
+  }
+
+  int document_result = parser.DocumentFiles(directory);
+  return document_result;
 }
