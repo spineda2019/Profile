@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
   if (argc < 2) {
     directory = std::filesystem::absolute(".");
   } else {
-    std::filesystem::path directory(std::filesystem::absolute(argv[1]));
+    directory = std::filesystem::absolute(argv[1]);
   }
 
   std::cout << "Profiling Directory " << directory << std::endl << std::endl;
