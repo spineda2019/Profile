@@ -14,6 +14,7 @@ include_directories(include)
 set(SOURCES "src/main.cpp" "src/directory_validator.cpp" "src/Parser.cpp")
 # create the executable
 add_executable(${PROJECT_NAME} ${SOURCES})
+install(TARGETS Profile)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
   target_link_libraries(Profile pthread)
