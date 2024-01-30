@@ -1,7 +1,7 @@
-#include <Parser.hpp>
 #include <filesystem>
 #include <iostream>
 
+#include "Parser.hpp"
 #include "directory_validator.hpp"
 
 int main(int argc, char** argv) {
@@ -28,6 +28,5 @@ int main(int argc, char** argv) {
     return parse_result;
   }
 
-  int document_result = parser.DocumentFiles(directory);
-  return document_result;
+  return 0;
 }
