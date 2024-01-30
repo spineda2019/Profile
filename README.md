@@ -69,3 +69,13 @@ and move to the build directory and build the program:
 cd build
 cmake --build . --config Release
 ```
+
+You can then install the program to your machine's binary folder with:
+
+```zsh
+sudo --install .
+```
+
+If you are on windows, you will need to do this with admin priviledges. Also
+note that on Windows, you may need to add the <code>Profile</code> directory
+(created in your Program Files directory) to your path.
