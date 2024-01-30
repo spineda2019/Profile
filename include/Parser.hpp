@@ -30,14 +30,16 @@ class Parser {
  public:
   Parser();
   [[nodiscard]] int ParseFiles(const std::filesystem::path& current_file);
-  [[nodiscard]] int DocumentFiles(const std::filesystem::path& root_folder) const;
+  [[nodiscard]] int DocumentFiles(
+      const std::filesystem::path& root_folder) const;
 
  private:
   const bool IsValidFile(const std::filesystem::path& file,
                          CommentFormat& comment_format) const;
   void RecursivelyParseFiles(const std::filesystem::path& current_file);
 
-  void RecursivelyDocumentFiles(const std::filesystem::path& current_file, std::ofstream& output_markdown) const;
+  void RecursivelyDocumentFiles(const std::filesystem::path& current_file,
+                                std::ofstream& output_markdown) const;
 
   std::size_t todo_count_;
   std::size_t fixme_count_;
@@ -48,8 +50,8 @@ class Parser {
   static constexpr std::uint8_t FATAL_UNKNOWN_ERROR = 4;
   static constexpr std::uint8_t SUCCESS = 0;
 
-  static constexpr std::array<const char*, 8> double_slash_extensions_{
-      ".c", ".cpp", ".h", ".hpp", ".js", ".rs", ".ts", ".zig"};
+  static constexpr std::array<const char*, 9> double_slash_extensions_{
+      ".c", ".cpp", ".h", ".hpp", ".js", ".rs", ".ts", ".zig", ".cs"};
   static constexpr std::array<const char*, 1> pound_sign_extensions_{".py"};
 };
 
