@@ -206,8 +206,6 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
   std::filesystem::path document_path(root_folder);
   document_path.append("Profile.md");
 
-  std::cout << document_path << std::endl;
-
   std::ofstream document_file(document_path);
 
   document_file << "# " << root_folder << std::endl;
