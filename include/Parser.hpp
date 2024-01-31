@@ -49,7 +49,8 @@ class Parser {
   std::mutex print_lock_;
   std::mutex markdown_lock_;
 
-  static constexpr std::uint8_t FATAL_UNKNOWN_ERROR = 4;
+  static constexpr std::uint8_t FATAL_UNKNOWN_ERROR = 2;
+  static constexpr std::uint8_t FATAL_UNEXPECTED_FILETYPE_ERROR = 1;
   static constexpr std::uint8_t SUCCESS = 0;
 
   static constexpr std::array<const char*, 9> double_slash_extensions_{
