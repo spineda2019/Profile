@@ -38,6 +38,8 @@ class Parser {
   void RecursivelyDocumentFiles(const std::filesystem::path& current_file,
                                 std::ofstream& output_markdown) const;
 
+  static std::size_t FindCommentPosition(const CommentFormat& comment_format);
+
   std::size_t todo_count_;
   std::size_t fixme_count_;
   std::size_t file_count_;
