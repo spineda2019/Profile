@@ -147,7 +147,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
     std::cout << e.what() << std::endl;
   } catch (const std::exception& e) {
     std::cout << "Unexpected Exception Thrown: " << e.what() << std::endl;
-    return_code = Parser::FATAL_UNKNOWN_ERROR;
+    return_code = Parser::FATAL_UNEXPECTED_FILETYPE_ERROR;
   } catch (...) {
     std::cout << "UNKNOWN EXCEPTION CAUGHT" << std::endl;
     return_code = Parser::FATAL_UNKNOWN_ERROR;
@@ -231,7 +231,7 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
     return_code = Parser::SUCCESS;
   } catch (const UnexpectedFileTypeException& e) {
     std::cerr << e.what() << std::endl;
-    return_code = Parser::FATAL_UNKNOWN_ERROR;
+    return_code = Parser::FATAL_UNEXPECTED_FILETYPE_ERROR;
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
     return_code = Parser::FATAL_UNKNOWN_ERROR;
