@@ -20,7 +20,9 @@ UnexpectedFileTypeException::UnexpectedFileTypeException(
 const char* UnexpectedFileTypeException::what() const noexcept {
   std::stringstream error_message("FATAL: Unexpected filetype found: ");
   error_message << this->bad_file_;
-  return error_message.str().c_str();
+  std::string error_message_string = error_message.str();
+  const char* what_message = error_message_string.c_str();
+  return what_message;
 }
 
 const bool Parser::IsValidFile(const std::filesystem::path& file,
