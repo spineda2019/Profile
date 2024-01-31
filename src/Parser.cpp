@@ -160,7 +160,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
 }
 
 void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
-                                      std::ofstream& output_markdown) const {
+                                      std::ofstream& output_markdown) {
   if (std::filesystem::is_symlink(current_file)) {
     return;
   }
@@ -191,6 +191,15 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
   std::fstream file_stream(current_file);
   std::string line{};
   std::size_t comment_position{};
+  std::unique_ptr<std::vector<std::stringstream>> file_info{};
+
+  std::stringstream title{};
+  title << "## Information About: " << current_file << std::endl;
+
+  {
+    std::lock_guard<std::mutex> write_guard(this->markdown_lock_);
+    output_markdown << title.str();
+  }
 
   while (std::getline(file_stream, line)) {
     comment_position =
@@ -203,13 +212,14 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
 }
 
 [[nodiscard]] int Parser::DocumentFiles(
-    const std::filesystem::path& root_folder) const {
-  std::filesystem::path document_path(std::filesystem::absolute("."));
+    const std::filesystem::path& root_folder) {
+  std::filesystem::path document_path(
+      std::filesystem::canonical(std::filesystem::absolute(".")));
   document_path.append("Profile.md");
 
   std::ofstream document_file(document_path);
 
-  document_file << "# " << root_folder << std::endl;
+  document_file << "# " << document_path << std::endl;
 
   std::uint8_t return_code{};
 
