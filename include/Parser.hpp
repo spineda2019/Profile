@@ -4,10 +4,7 @@
 #include <array>
 #include <filesystem>
 #include <fstream>
-#include <memory>
 #include <mutex>
-#include <string>
-#include <vector>
 
 namespace parser_info {
 
@@ -46,6 +43,7 @@ class Parser {
   std::size_t file_count_;
 
   std::mutex print_lock_;
+  std::mutex markdown_lock_;
 
   static constexpr std::uint8_t FATAL_UNKNOWN_ERROR = 4;
   static constexpr std::uint8_t SUCCESS = 0;
