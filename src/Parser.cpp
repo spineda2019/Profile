@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <sstream>
 #include <string>
@@ -191,15 +192,12 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
   std::fstream file_stream(current_file);
   std::string line{};
   std::size_t comment_position{};
-  std::unique_ptr<std::vector<std::stringstream>> file_info{};
+  std::unique_ptr<std::vector<std::stringstream>> file_info =
+      std::make_unique<std::vector<std::stringstream>>();
 
   std::stringstream title{};
-  title << "## Information About: " << current_file << std::endl;
-
-  {
-    std::lock_guard<std::mutex> write_guard(this->markdown_lock_);
-    output_markdown << title.str();
-  }
+  title << "## Information About: " << current_file;
+  file_info->push_back(std::move(title));
 
   while (std::getline(file_stream, line)) {
     comment_position =
@@ -208,6 +206,11 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
     if (comment_position == std::string::npos) {
       continue;
     }
+  }
+
+  std::lock_guard<std::mutex> guard(this->markdown_lock_);
+  for (const std::stringstream& item : *file_info) {
+    output_markdown << item.str() << std::endl;
   }
 }
 
