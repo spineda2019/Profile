@@ -28,8 +28,7 @@ class Parser {
  public:
   Parser();
   [[nodiscard]] int ParseFiles(const std::filesystem::path& current_file);
-  [[nodiscard]] int DocumentFiles(
-      const std::filesystem::path& root_folder) const;
+  [[nodiscard]] int DocumentFiles(const std::filesystem::path& root_folder);
 
  private:
   const bool IsValidFile(const std::filesystem::path& file,
@@ -37,7 +36,7 @@ class Parser {
   void RecursivelyParseFiles(const std::filesystem::path& current_file);
 
   void RecursivelyDocumentFiles(const std::filesystem::path& current_file,
-                                std::ofstream& output_markdown) const;
+                                std::ofstream& output_markdown);
 
   static std::size_t FindCommentPosition(
       const CommentFormat& comment_format, const std::string& line,
