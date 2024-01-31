@@ -222,7 +222,7 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
 
   std::ofstream document_file(document_path);
 
-  document_file << "# " << document_path << std::endl;
+  document_file << "# " << document_path.parent_path() << std::endl;
 
   std::uint8_t return_code{};
 
