@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <mutex>
+#include <string>
 
 namespace parser_info {
 
@@ -38,7 +39,9 @@ class Parser {
   void RecursivelyDocumentFiles(const std::filesystem::path& current_file,
                                 std::ofstream& output_markdown) const;
 
-  static std::size_t FindCommentPosition(const CommentFormat& comment_format);
+  static std::size_t FindCommentPosition(
+      const CommentFormat& comment_format, const std::string& line,
+      const std::filesystem::path& current_file);
 
   std::size_t todo_count_;
   std::size_t fixme_count_;
