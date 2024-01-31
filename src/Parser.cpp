@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -42,6 +43,25 @@ const bool Parser::IsValidFile(const std::filesystem::path& file,
   } else {
     comment_format = CommentFormat::None;
     return false;
+  }
+}
+
+std::size_t Parser::FindCommentPosition(
+    const CommentFormat& comment_format, const std::string& line,
+    const std::filesystem::path& current_file) {
+  switch (comment_format) {
+    case CommentFormat::DoubleSlash:
+      return line.find("//");
+      break;
+    case CommentFormat::PoundSign:
+      return line.find("#");
+      break;
+    default:  // Should be impossible, but let's be safe
+      std::cerr << "Unexpected file type: " << current_file.extension()
+                << std::endl;
+      UnexpectedFileTypeException file_exception(current_file);
+      throw file_exception;
+      break;
   }
 }
 
@@ -84,20 +104,8 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   while (std::getline(file_stream, line)) {
     line_count++;
 
-    switch (comment_format) {
-      case CommentFormat::DoubleSlash:
-        comment_position = line.find("//");
-        break;
-      case CommentFormat::PoundSign:
-        comment_position = line.find("#");
-        break;
-      default:  // Should be impossible, but let's be safe
-        std::cerr << "Unexpected file type: " << current_file.extension()
-                  << std::endl;
-        UnexpectedFileTypeException file_exception(current_file);
-        throw file_exception;
-        break;
-    }
+    comment_position =
+        Parser::FindCommentPosition(comment_format, line, current_file);
 
     if (comment_position == std::string::npos) {
       continue;
@@ -145,7 +153,8 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   }
 
   std::cout << "Files Profiled: " << this->file_count_ << std::endl;
-  std::cout << "TODOs Found: " << this->todo_count_ << std::endl;  // TODO test
+  std::cout << "TODOs Found: " << this->todo_count_
+            << std::endl;  // TODO(not_a_real_todo) test
   std::cout << "FIXMEs Found: " << this->fixme_count_ << std::endl << std::endl;
   return return_code;
 }
@@ -184,20 +193,8 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
   std::size_t comment_position{};
 
   while (std::getline(file_stream, line)) {
-    switch (comment_format) {
-      case CommentFormat::DoubleSlash:
-        comment_position = line.find("//");
-        break;
-      case CommentFormat::PoundSign:
-        comment_position = line.find("#");
-        break;
-      default:
-        std::cerr << "Unexpected file type: " << current_file.extension()
-                  << std::endl;
-        UnexpectedFileTypeException file_exception(current_file);
-        throw file_exception;
-        break;
-    }
+    comment_position =
+        Parser::FindCommentPosition(comment_format, line, current_file);
 
     if (comment_position == std::string::npos) {
       continue;
@@ -207,7 +204,7 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
 
 [[nodiscard]] int Parser::DocumentFiles(
     const std::filesystem::path& root_folder) const {
-  std::filesystem::path document_path(root_folder);
+  std::filesystem::path document_path(std::filesystem::absolute("."));
   document_path.append("Profile.md");
 
   std::ofstream document_file(document_path);
@@ -219,8 +216,12 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
   try {
     this->RecursivelyDocumentFiles(root_folder, document_file);
     return_code = Parser::SUCCESS;
+  } catch (const UnexpectedFileTypeException& e) {
+    std::cerr << e.what() << std::endl;
+    return_code = Parser::FATAL_UNKNOWN_ERROR;
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
+    return_code = Parser::FATAL_UNKNOWN_ERROR;
   }
 
   document_file.close();
