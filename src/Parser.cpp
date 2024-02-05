@@ -160,6 +160,12 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   return return_code;
 }
 
+bool Parser::AreWeLookingForDocumentation(
+    const std::string& line, const std::filesystem::path& current_file) {
+  // TODO: Determine what we're looking for based on file
+  return false;
+}
+
 void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
                                       std::ofstream& output_markdown) {
   if (std::filesystem::is_symlink(current_file)) {
@@ -199,7 +205,14 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
   title << "## Information About: " << current_file;
   file_info->push_back(std::move(title));
 
+  bool looking = false;
   while (std::getline(file_stream, line)) {
+    looking =
+        looking || Parser::AreWeLookingForDocumentation(line, current_file);
+    if (!looking) {
+      continue;
+    }
+
     comment_position =
         Parser::FindCommentPosition(comment_format, line, current_file);
 
