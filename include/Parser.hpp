@@ -42,6 +42,9 @@ class Parser {
       const CommentFormat& comment_format, const std::string& line,
       const std::filesystem::path& current_file);
 
+  static bool AreWeLookingForDocumentation(
+      const std::string& line, const std::filesystem::path& current_file);
+
   std::size_t todo_count_;
   std::size_t fixme_count_;
   std::size_t file_count_;
