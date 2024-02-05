@@ -4,6 +4,7 @@ out/
 .vs/
 build/
 linux_build/
+Profile.md
 log.txt
 # Prerequisites
 *.d

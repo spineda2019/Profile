@@ -4,10 +4,8 @@
 #include <array>
 #include <filesystem>
 #include <fstream>
-#include <memory>
 #include <mutex>
 #include <string>
-#include <vector>
 
 namespace parser_info {
 
@@ -30,8 +28,7 @@ class Parser {
  public:
   Parser();
   [[nodiscard]] int ParseFiles(const std::filesystem::path& current_file);
-  [[nodiscard]] int DocumentFiles(
-      const std::filesystem::path& root_folder) const;
+  [[nodiscard]] int DocumentFiles(const std::filesystem::path& root_folder);
 
  private:
   const bool IsValidFile(const std::filesystem::path& file,
@@ -39,15 +36,24 @@ class Parser {
   void RecursivelyParseFiles(const std::filesystem::path& current_file);
 
   void RecursivelyDocumentFiles(const std::filesystem::path& current_file,
-                                std::ofstream& output_markdown) const;
+                                std::ofstream& output_markdown);
+
+  static std::size_t FindCommentPosition(
+      const CommentFormat& comment_format, const std::string& line,
+      const std::filesystem::path& current_file);
+
+  static bool AreWeLookingForDocumentation(
+      const std::string& line, const std::filesystem::path& current_file);
 
   std::size_t todo_count_;
   std::size_t fixme_count_;
   std::size_t file_count_;
 
   std::mutex print_lock_;
+  std::mutex markdown_lock_;
 
-  static constexpr std::uint8_t FATAL_UNKNOWN_ERROR = 4;
+  static constexpr std::uint8_t FATAL_UNKNOWN_ERROR = 2;
+  static constexpr std::uint8_t FATAL_UNEXPECTED_FILETYPE_ERROR = 1;
   static constexpr std::uint8_t SUCCESS = 0;
 
   static constexpr std::array<const char*, 9> double_slash_extensions_{

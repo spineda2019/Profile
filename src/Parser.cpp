@@ -5,6 +5,8 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <mutex>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -20,7 +22,9 @@ UnexpectedFileTypeException::UnexpectedFileTypeException(
 const char* UnexpectedFileTypeException::what() const noexcept {
   std::stringstream error_message("FATAL: Unexpected filetype found: ");
   error_message << this->bad_file_;
-  return error_message.str().c_str();
+  std::string error_message_string = error_message.str();
+  const char* what_message = error_message_string.c_str();
+  return what_message;
 }
 
 const bool Parser::IsValidFile(const std::filesystem::path& file,
@@ -40,6 +44,25 @@ const bool Parser::IsValidFile(const std::filesystem::path& file,
   } else {
     comment_format = CommentFormat::None;
     return false;
+  }
+}
+
+std::size_t Parser::FindCommentPosition(
+    const CommentFormat& comment_format, const std::string& line,
+    const std::filesystem::path& current_file) {
+  switch (comment_format) {
+    case CommentFormat::DoubleSlash:
+      return line.find("//");
+      break;
+    case CommentFormat::PoundSign:
+      return line.find("#");
+      break;
+    default:  // Should be impossible, but let's be safe
+      std::cerr << "Unexpected file type: " << current_file.extension()
+                << std::endl;
+      UnexpectedFileTypeException file_exception(current_file);
+      throw file_exception;
+      break;
   }
 }
 
@@ -82,20 +105,8 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   while (std::getline(file_stream, line)) {
     line_count++;
 
-    switch (comment_format) {
-      case CommentFormat::DoubleSlash:
-        comment_position = line.find("//");
-        break;
-      case CommentFormat::PoundSign:
-        comment_position = line.find("#");
-        break;
-      default:  // Should be impossible, but let's be safe
-        std::cerr << "Unexpected file type: " << current_file.extension()
-                  << std::endl;
-        UnexpectedFileTypeException file_exception(current_file);
-        throw file_exception;
-        break;
-    }
+    comment_position =
+        Parser::FindCommentPosition(comment_format, line, current_file);
 
     if (comment_position == std::string::npos) {
       continue;
@@ -136,20 +147,27 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
     std::cout << e.what() << std::endl;
   } catch (const std::exception& e) {
     std::cout << "Unexpected Exception Thrown: " << e.what() << std::endl;
-    return_code = Parser::FATAL_UNKNOWN_ERROR;
+    return_code = Parser::FATAL_UNEXPECTED_FILETYPE_ERROR;
   } catch (...) {
     std::cout << "UNKNOWN EXCEPTION CAUGHT" << std::endl;
     return_code = Parser::FATAL_UNKNOWN_ERROR;
   }
 
   std::cout << "Files Profiled: " << this->file_count_ << std::endl;
-  std::cout << "TODOs Found: " << this->todo_count_ << std::endl;  // TODO test
+  std::cout << "TODOs Found: " << this->todo_count_
+            << std::endl;  // TODO(not_a_real_todo) test
   std::cout << "FIXMEs Found: " << this->fixme_count_ << std::endl << std::endl;
   return return_code;
 }
 
+bool Parser::AreWeLookingForDocumentation(
+    const std::string& line, const std::filesystem::path& current_file) {
+  // TODO: Determine what we're looking for based on file
+  return false;
+}
+
 void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
-                                      std::ofstream& output_markdown) const {
+                                      std::ofstream& output_markdown) {
   if (std::filesystem::is_symlink(current_file)) {
     return;
   }
@@ -180,45 +198,56 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
   std::fstream file_stream(current_file);
   std::string line{};
   std::size_t comment_position{};
+  std::unique_ptr<std::vector<std::stringstream>> file_info =
+      std::make_unique<std::vector<std::stringstream>>();
 
+  std::stringstream title{};
+  title << "## Information About: " << current_file;
+  file_info->push_back(std::move(title));
+
+  bool looking = false;
   while (std::getline(file_stream, line)) {
-    switch (comment_format) {
-      case CommentFormat::DoubleSlash:
-        comment_position = line.find("//");
-        break;
-      case CommentFormat::PoundSign:
-        comment_position = line.find("#");
-        break;
-      default:
-        std::cerr << "Unexpected file type: " << current_file.extension()
-                  << std::endl;
-        UnexpectedFileTypeException file_exception(current_file);
-        throw file_exception;
-        break;
+    looking =
+        looking || Parser::AreWeLookingForDocumentation(line, current_file);
+    if (!looking) {
+      continue;
     }
+
+    comment_position =
+        Parser::FindCommentPosition(comment_format, line, current_file);
 
     if (comment_position == std::string::npos) {
       continue;
     }
   }
+
+  std::lock_guard<std::mutex> guard(this->markdown_lock_);
+  for (const std::stringstream& item : *file_info) {
+    output_markdown << item.str() << std::endl;
+  }
 }
 
 [[nodiscard]] int Parser::DocumentFiles(
-    const std::filesystem::path& root_folder) const {
-  std::filesystem::path document_path(root_folder);
+    const std::filesystem::path& root_folder) {
+  std::filesystem::path document_path(
+      std::filesystem::canonical(std::filesystem::absolute(".")));
   document_path.append("Profile.md");
 
   std::ofstream document_file(document_path);
 
-  document_file << "# " << root_folder << std::endl;
+  document_file << "# " << document_path.parent_path() << std::endl;
 
   std::uint8_t return_code{};
 
   try {
     this->RecursivelyDocumentFiles(root_folder, document_file);
     return_code = Parser::SUCCESS;
+  } catch (const UnexpectedFileTypeException& e) {
+    std::cerr << e.what() << std::endl;
+    return_code = Parser::FATAL_UNEXPECTED_FILETYPE_ERROR;
   } catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;
+    return_code = Parser::FATAL_UNKNOWN_ERROR;
   }
 
   document_file.close();
