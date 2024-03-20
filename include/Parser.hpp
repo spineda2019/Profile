@@ -33,7 +33,7 @@ namespace parser_info {
 
 class UnexpectedFileTypeException : std::exception {
  public:
-  UnexpectedFileTypeException(std::filesystem::path bad_file);
+  explicit UnexpectedFileTypeException(std::filesystem::path bad_file);
   const char* what() const noexcept;
 
  private:
