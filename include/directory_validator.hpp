@@ -20,8 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef PROFILE_INCLUDE_DIRECTORY_VALIDATOR_HPP
-#define PROFILE_INCLUDE_DIRECTORY_VALIDATOR_HPP
+#ifndef INCLUDE_DIRECTORY_VALIDATOR_HPP_
+#define INCLUDE_DIRECTORY_VALIDATOR_HPP_
 
 #include <filesystem>
 #include <vector>
@@ -32,4 +32,4 @@ bool DirectoryExists(const std::filesystem::path& directory_name);
 void GetFilesToProfile(const std::filesystem::path& directory,
                        std::vector<std::filesystem::path>& found_files);
 }  // namespace directory_validation
-#endif  // PROFILE_INCLUDE_DIRECTORY_VALIDATOR_HPP
+#endif  // INCLUDE_DIRECTORY_VALIDATOR_HPP_
