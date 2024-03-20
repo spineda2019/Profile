@@ -20,8 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef PROFILE_INCLUDE_PARSER_HPP
-#define PROFILE_INCLUDE_PARSER_HPP
+#ifndef INCLUDE_PARSER_HPP_
+#define INCLUDE_PARSER_HPP_
 
 #include <array>
 #include <filesystem>
@@ -84,4 +84,4 @@ class Parser {
 };
 
 }  // namespace parser_info
-#endif  // PROFILE_INCLUDE_PARSER_HPP
+#endif  // INCLUDE_PARSER_HPP_
