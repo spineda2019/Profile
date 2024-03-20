@@ -23,7 +23,6 @@ SOFTWARE.
 #ifndef PROFILE_INCLUDE_DIRECTORY_VALIDATOR_HPP
 #define PROFILE_INCLUDE_DIRECTORY_VALIDATOR_HPP
 
-#include <array>
 #include <filesystem>
 #include <vector>
 
