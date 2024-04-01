@@ -184,7 +184,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
 
 bool Parser::AreWeLookingForDocumentation(
     const std::string& line, const std::filesystem::path& current_file) {
-  // TODO: Determine what we're looking for based on file
+  /* TODO: Determine what we're looking for based on file */
   return false;
 }
 
