@@ -29,7 +29,7 @@ SOFTWARE.
 int main(int argc, char** argv) {
   std::filesystem::path directory{};
 
-  if (argc < 2) {
+  if (argc != 2) {
     directory = std::filesystem::canonical(std::filesystem::absolute("."));
   } else {
     directory = std::filesystem::absolute(argv[1]);
