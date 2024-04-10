@@ -28,6 +28,7 @@ SOFTWARE.
 #include <fstream>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 
 namespace parser_info {
@@ -44,7 +45,6 @@ class UnexpectedFileTypeException : std::exception {
 enum class CommentFormat : std::uint8_t {
   DoubleSlash,
   PoundSign,
-  None,
 };
 
 class Parser {
@@ -54,16 +54,16 @@ class Parser {
   [[nodiscard]] int DocumentFiles(const std::filesystem::path& root_folder);
 
  private:
-  const bool IsValidFile(const std::filesystem::path& file,
-                         std::unique_ptr<CommentFormat> comment_format) const;
+  const std::optional<CommentFormat> IsValidFile(
+      const std::filesystem::path& file) const;
   void RecursivelyParseFiles(const std::filesystem::path& current_file);
 
   void RecursivelyDocumentFiles(const std::filesystem::path& current_file,
                                 std::ofstream& output_markdown);
 
   static std::size_t FindCommentPosition(
-      const CommentFormat& comment_format, const std::string& line,
-      const std::filesystem::path& current_file);
+      const std::optional<CommentFormat>& comment_format,
+      const std::string& line, const std::filesystem::path& current_file);
 
   static bool AreWeLookingForDocumentation(
       const std::string& line, const std::filesystem::path& current_file);
