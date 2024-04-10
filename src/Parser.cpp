@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "Parser.hpp"
+#include "include/Parser.hpp"
 
 #include <algorithm>
 #include <execution>
@@ -49,22 +49,23 @@ const char* UnexpectedFileTypeException::what() const noexcept {
   return what_message;
 }
 
-const bool Parser::IsValidFile(const std::filesystem::path& file,
-                               CommentFormat& comment_format) const {
+const bool Parser::IsValidFile(
+    const std::filesystem::path& file,
+    std::unique_ptr<CommentFormat> comment_format) const {
   std::filesystem::path extension(file.extension());
 
   if (std::find(this->double_slash_extensions_.begin(),
                 this->double_slash_extensions_.end(),
                 extension) != this->double_slash_extensions_.end()) {
-    comment_format = CommentFormat::DoubleSlash;
+    *comment_format = CommentFormat::DoubleSlash;
     return true;
   } else if (std::find(this->pound_sign_extensions_.begin(),
                        this->pound_sign_extensions_.end(),
                        extension) != this->pound_sign_extensions_.end()) {
-    comment_format = CommentFormat::PoundSign;
+    *comment_format = CommentFormat::PoundSign;
     return true;
   } else {
-    comment_format = CommentFormat::None;
+    *comment_format = CommentFormat::None;
     return false;
   }
 }
@@ -112,7 +113,8 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
 
   CommentFormat comment_format{};
 
-  if (!this->IsValidFile(current_file, comment_format)) {
+  if (!this->IsValidFile(current_file,
+                         std::make_unique<CommentFormat>(comment_format))) {
     return;
   }
 
@@ -213,7 +215,8 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
 
   CommentFormat comment_format{};
 
-  if (!this->IsValidFile(current_file, comment_format)) {
+  if (!this->IsValidFile(current_file,
+                         std::make_unique<CommentFormat>(comment_format))) {
     return;
   }
 

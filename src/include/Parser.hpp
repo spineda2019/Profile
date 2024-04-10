@@ -26,6 +26,7 @@ SOFTWARE.
 #include <array>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <mutex>
 #include <string>
 
@@ -54,7 +55,7 @@ class Parser {
 
  private:
   const bool IsValidFile(const std::filesystem::path& file,
-                         CommentFormat& comment_format) const;
+                         std::unique_ptr<CommentFormat> comment_format) const;
   void RecursivelyParseFiles(const std::filesystem::path& current_file);
 
   void RecursivelyDocumentFiles(const std::filesystem::path& current_file,
