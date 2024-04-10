@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 # add the directories containing the header files to the search path
-include_directories(include)
+include_directories(src/include)
 
 # collect all source files from the src directory
 set(SOURCES "src/main.cpp" "src/directory_validator.cpp" "src/Parser.cpp")
