@@ -162,27 +162,14 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
 }
 
 [[nodiscard]] int Parser::ParseFiles(
-    const std::filesystem::path& current_file) {
-  std::uint8_t return_code{};
-  try {
-    this->RecursivelyParseFiles(current_file);
-
-    return_code = Parser::SUCCESS;
-  } catch (const UnexpectedFileTypeException& e) {
-    std::cout << e.what() << std::endl;
-  } catch (const std::exception& e) {
-    std::cout << "Unexpected Exception Thrown: " << e.what() << std::endl;
-    return_code = Parser::FATAL_UNEXPECTED_FILETYPE_ERROR;
-  } catch (...) {
-    std::cout << "UNKNOWN EXCEPTION CAUGHT" << std::endl;
-    return_code = Parser::FATAL_UNKNOWN_ERROR;
-  }
+    const std::filesystem::path& current_file) noexcept {
+  this->RecursivelyParseFiles(current_file);
 
   std::cout << "Files Profiled: " << this->file_count_ << std::endl;
   std::cout << "TODOs Found: " << this->todo_count_
             << std::endl;  // TODO(not_a_real_todo) test
   std::cout << "FIXMEs Found: " << this->fixme_count_ << std::endl << std::endl;
-  return return_code;
+  return 0;
 }
 
 bool Parser::AreWeLookingForDocumentation(

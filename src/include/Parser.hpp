@@ -50,7 +50,8 @@ enum class CommentFormat : std::uint8_t {
 class Parser {
  public:
   Parser();
-  [[nodiscard]] int ParseFiles(const std::filesystem::path& current_file);
+  [[nodiscard]] int ParseFiles(
+      const std::filesystem::path& current_file) noexcept;
   [[nodiscard]] int DocumentFiles(const std::filesystem::path& root_folder);
 
  private:
@@ -74,10 +75,6 @@ class Parser {
 
   std::mutex print_lock_;
   std::mutex markdown_lock_;
-
-  static constexpr std::uint8_t FATAL_UNKNOWN_ERROR = 2;
-  static constexpr std::uint8_t FATAL_UNEXPECTED_FILETYPE_ERROR = 1;
-  static constexpr std::uint8_t SUCCESS = 0;
 
   static constexpr std::array<const char*, 9> double_slash_extensions_{
       ".c", ".cpp", ".h", ".hpp", ".js", ".rs", ".ts", ".zig", ".cs"};
