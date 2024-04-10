@@ -26,7 +26,6 @@ SOFTWARE.
 #include <array>
 #include <filesystem>
 #include <fstream>
-#include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -61,7 +60,7 @@ class Parser {
   void RecursivelyDocumentFiles(const std::filesystem::path& current_file,
                                 std::ofstream& output_markdown);
 
-  static std::size_t FindCommentPosition(
+  static std::optional<std::size_t> FindCommentPosition(
       const std::optional<CommentFormat>& comment_format,
       const std::string& line, const std::filesystem::path& current_file);
 

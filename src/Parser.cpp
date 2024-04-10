@@ -67,14 +67,13 @@ const std::optional<CommentFormat> Parser::IsValidFile(
   }
 }
 
-std::size_t Parser::FindCommentPosition(
+std::optional<std::size_t> Parser::FindCommentPosition(
     const std::optional<CommentFormat>& comment_format, const std::string& line,
     const std::filesystem::path& current_file) {
   if (!comment_format.has_value()) {
     std::cerr << "Unexpected file type: " << current_file.extension()
               << std::endl;
-    UnexpectedFileTypeException file_exception(current_file);
-    throw file_exception;
+    return std::nullopt;
   } else {
     switch (comment_format.value()) {
       case CommentFormat::DoubleSlash:
@@ -118,7 +117,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   std::fstream file_stream(current_file);
   std::size_t line_count = 0;
   std::string line{};
-  std::size_t comment_position{};
+  std::optional<std::size_t> comment_position{};
   std::size_t todo_position{};
   std::size_t fixme_position{};
   this->file_count_++;
@@ -129,12 +128,16 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
     comment_position =
         Parser::FindCommentPosition(comment_format, line, current_file);
 
-    if (comment_position == std::string::npos) {
+    if (!comment_position.has_value()) {
+      break;
+    }
+
+    if (comment_position.value() == std::string::npos) {
       continue;
     }
 
-    todo_position = line.find("TODO", comment_position);
-    fixme_position = line.find("FIXME", comment_position);
+    todo_position = line.find("TODO", comment_position.value());
+    fixme_position = line.find("FIXME", comment_position.value());
     if (todo_position != std::string::npos) {
       std::lock_guard lock(this->print_lock_);
       std::cout << "TODO Found:" << std::endl
@@ -217,7 +220,7 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
 
   std::fstream file_stream(current_file);
   std::string line{};
-  std::size_t comment_position{};
+  std::optional<std::size_t> comment_position{};
   std::unique_ptr<std::vector<std::stringstream>> file_info =
       std::make_unique<std::vector<std::stringstream>>();
 
@@ -236,7 +239,11 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
     comment_position =
         Parser::FindCommentPosition(comment_format, line, current_file);
 
-    if (comment_position == std::string::npos) {
+    if (!comment_position.has_value()) {
+      break;
+    }
+
+    if (comment_position.value() == std::string::npos) {
       continue;
     }
   }
