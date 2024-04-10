@@ -54,18 +54,13 @@ const char* UnexpectedFileTypeException::what() const noexcept {
 const std::optional<CommentFormat> Parser::IsValidFile(
     const std::filesystem::path& file) const {
   std::filesystem::path extension(file.extension());
-
-  if (std::find(this->double_slash_extensions_.begin(),
-                this->double_slash_extensions_.end(),
-                extension) != this->double_slash_extensions_.end()) {
-    return CommentFormat::DoubleSlash;
-  } else if (std::find(this->pound_sign_extensions_.begin(),
-                       this->pound_sign_extensions_.end(),
-                       extension) != this->pound_sign_extensions_.end()) {
-    return CommentFormat::PoundSign;
-  } else {
-    return std::nullopt;
+  for (const auto [file_extension, classification] : Parser::COMMENT_FORMATS) {
+    if (extension == file_extension) {
+      return classification;
+    }
   }
+
+  return std::nullopt;
 }
 
 std::optional<std::size_t> Parser::FindCommentPosition(
@@ -252,20 +247,9 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
 
   document_file << "# " << document_path.parent_path() << std::endl;
 
-  std::uint8_t return_code{};
-
-  try {
-    this->RecursivelyDocumentFiles(root_folder, document_file);
-    return_code = Parser::SUCCESS;
-  } catch (const UnexpectedFileTypeException& e) {
-    std::cerr << e.what() << std::endl;
-    return_code = Parser::FATAL_UNEXPECTED_FILETYPE_ERROR;
-  } catch (const std::exception& e) {
-    std::cerr << e.what() << std::endl;
-    return_code = Parser::FATAL_UNKNOWN_ERROR;
-  }
+  this->RecursivelyDocumentFiles(root_folder, document_file);
 
   document_file.close();
-  return return_code;
+  return 0;
 }
 }  // namespace parser_info

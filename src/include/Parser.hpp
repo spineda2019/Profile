@@ -30,6 +30,7 @@ SOFTWARE.
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace parser_info {
 
@@ -76,9 +77,19 @@ class Parser {
   std::mutex print_lock_;
   std::mutex markdown_lock_;
 
-  static constexpr std::array<const char*, 9> double_slash_extensions_{
-      ".c", ".cpp", ".h", ".hpp", ".js", ".rs", ".ts", ".zig", ".cs"};
-  static constexpr std::array<const char*, 1> pound_sign_extensions_{".py"};
+  static constexpr std::array<std::pair<const char*, CommentFormat>, 10>
+      COMMENT_FORMATS{{
+          {".c", CommentFormat::DoubleSlash},
+          {".cpp", CommentFormat::DoubleSlash},
+          {".h", CommentFormat::DoubleSlash},
+          {".hpp", CommentFormat::DoubleSlash},
+          {".js", CommentFormat::DoubleSlash},
+          {".rs", CommentFormat::DoubleSlash},
+          {".ts", CommentFormat::DoubleSlash},
+          {".zig", CommentFormat::DoubleSlash},
+          {".cs", CommentFormat::DoubleSlash},
+          {".py", CommentFormat::PoundSign},
+      }};
 };
 
 }  // namespace parser_info
