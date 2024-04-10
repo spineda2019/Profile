@@ -114,7 +114,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
     return;
   }
 
-  std::fstream file_stream(current_file);
+  std::ifstream file_stream(current_file);
   std::size_t line_count = 0;
   std::string line{};
   std::optional<std::size_t> comment_position{};
