@@ -32,6 +32,7 @@ SOFTWARE.
 #include <optional>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace parser_info {
@@ -68,8 +69,8 @@ const std::optional<CommentFormat> Parser::IsValidFile(
 }
 
 std::optional<std::size_t> Parser::FindCommentPosition(
-    const std::optional<CommentFormat>& comment_format, const std::string& line,
-    const std::filesystem::path& current_file) {
+    const std::optional<CommentFormat>& comment_format,
+    const std::string_view line, const std::filesystem::path& current_file) {
   if (!comment_format.has_value()) {
     std::cerr << "Unexpected file type: " << current_file.extension()
               << std::endl;

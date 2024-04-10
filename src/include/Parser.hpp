@@ -29,6 +29,7 @@ SOFTWARE.
 #include <mutex>
 #include <optional>
 #include <string>
+#include <string_view>
 
 namespace parser_info {
 
@@ -62,7 +63,7 @@ class Parser {
 
   static std::optional<std::size_t> FindCommentPosition(
       const std::optional<CommentFormat>& comment_format,
-      const std::string& line, const std::filesystem::path& current_file);
+      const std::string_view line, const std::filesystem::path& current_file);
 
   static bool AreWeLookingForDocumentation(
       const std::string& line, const std::filesystem::path& current_file);
