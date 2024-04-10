@@ -29,6 +29,7 @@ SOFTWARE.
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -49,43 +50,40 @@ const char* UnexpectedFileTypeException::what() const noexcept {
   return what_message;
 }
 
-const bool Parser::IsValidFile(
-    const std::filesystem::path& file,
-    std::unique_ptr<CommentFormat> comment_format) const {
+const std::optional<CommentFormat> Parser::IsValidFile(
+    const std::filesystem::path& file) const {
   std::filesystem::path extension(file.extension());
 
   if (std::find(this->double_slash_extensions_.begin(),
                 this->double_slash_extensions_.end(),
                 extension) != this->double_slash_extensions_.end()) {
-    *comment_format = CommentFormat::DoubleSlash;
-    return true;
+    return CommentFormat::DoubleSlash;
   } else if (std::find(this->pound_sign_extensions_.begin(),
                        this->pound_sign_extensions_.end(),
                        extension) != this->pound_sign_extensions_.end()) {
-    *comment_format = CommentFormat::PoundSign;
-    return true;
+    return CommentFormat::PoundSign;
   } else {
-    *comment_format = CommentFormat::None;
-    return false;
+    return std::nullopt;
   }
 }
 
 std::size_t Parser::FindCommentPosition(
-    const CommentFormat& comment_format, const std::string& line,
+    const std::optional<CommentFormat>& comment_format, const std::string& line,
     const std::filesystem::path& current_file) {
-  switch (comment_format) {
-    case CommentFormat::DoubleSlash:
-      return line.find("//");
-      break;
-    case CommentFormat::PoundSign:
-      return line.find("#");
-      break;
-    default:  // Should be impossible, but let's be safe
-      std::cerr << "Unexpected file type: " << current_file.extension()
-                << std::endl;
-      UnexpectedFileTypeException file_exception(current_file);
-      throw file_exception;
-      break;
+  if (!comment_format.has_value()) {
+    std::cerr << "Unexpected file type: " << current_file.extension()
+              << std::endl;
+    UnexpectedFileTypeException file_exception(current_file);
+    throw file_exception;
+  } else {
+    switch (comment_format.value()) {
+      case CommentFormat::DoubleSlash:
+        return line.find("//");
+        break;
+      case CommentFormat::PoundSign:
+        return line.find("#");
+        break;
+    }
   }
 }
 
@@ -111,10 +109,9 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
                   });
   }
 
-  CommentFormat comment_format{};
+  std::optional<CommentFormat> comment_format{this->IsValidFile(current_file)};
 
-  if (!this->IsValidFile(current_file,
-                         std::make_unique<CommentFormat>(comment_format))) {
+  if (!comment_format.has_value()) {
     return;
   }
 
@@ -213,10 +210,8 @@ void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
         });
   }
 
-  CommentFormat comment_format{};
-
-  if (!this->IsValidFile(current_file,
-                         std::make_unique<CommentFormat>(comment_format))) {
+  std::optional<CommentFormat> comment_format{this->IsValidFile(current_file)};
+  if (!comment_format.has_value()) {
     return;
   }
 
