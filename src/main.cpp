@@ -50,6 +50,10 @@ int main(int argc, char** argv) {
   if (argument_parser.get<bool>("-h") || argument_parser.get<bool>("--help")) {
     std::cout << argument_parser;
     return 0;
+  } else if (argument_parser.get<bool>("-v") ||
+             argument_parser.get<bool>("--version")) {
+    std::cout << "Profile 0.0.1" << std::endl;
+    return 0;
   }
 
   std::filesystem::path directory{};
