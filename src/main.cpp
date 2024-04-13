@@ -39,6 +39,9 @@ int main(int argc, char** argv) {
       .default_value(false)
       .implicit_value(true);
 
+  argument_parser.add_argument("--directory", "-d")
+      .help("Directory to Profile");
+
   try {
     argument_parser.parse_args(argc, argv);
   } catch (const std::exception& err) {
@@ -47,21 +50,21 @@ int main(int argc, char** argv) {
     std::exit(1);
   }
 
-  if (argument_parser.get<bool>("-h") || argument_parser.get<bool>("--help")) {
+  if (argument_parser.get<bool>("-h")) {
     std::cout << argument_parser;
     return 0;
-  } else if (argument_parser.get<bool>("-v") ||
-             argument_parser.get<bool>("--version")) {
+  } else if (argument_parser.get<bool>("-v")) {
     std::cout << "Profile 0.0.1" << std::endl;
     return 0;
   }
 
+  std::optional<std::string> dir_str = argument_parser.present("-d");
   std::filesystem::path directory{};
 
-  if (argc != 2) {
-    directory = std::filesystem::canonical(std::filesystem::absolute("."));
+  if (dir_str.has_value()) {
+    directory = std::filesystem::absolute(dir_str.value());
   } else {
-    directory = std::filesystem::absolute(argv[1]);
+    directory = std::filesystem::absolute(".");
   }
 
   std::cout << "Profiling Directory " << directory << std::endl << std::endl;
