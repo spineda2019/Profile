@@ -62,9 +62,10 @@ int main(int argc, char** argv) {
   std::filesystem::path directory{};
 
   if (dir_str.has_value()) {
-    directory = std::filesystem::absolute(dir_str.value());
+    directory =
+        std::filesystem::canonical(std::filesystem::absolute(dir_str.value()));
   } else {
-    directory = std::filesystem::absolute(".");
+    directory = std::filesystem::canonical(std::filesystem::absolute("."));
   }
 
   std::cout << "Profiling Directory " << directory << std::endl << std::endl;
