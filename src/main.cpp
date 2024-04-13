@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <argparse/argparse.hpp>
 #include <filesystem>
 #include <iostream>
 
@@ -27,6 +28,30 @@ SOFTWARE.
 #include "include/directory_validator.hpp"
 
 int main(int argc, char** argv) {
+  argparse::ArgumentParser argument_parser("main");
+  argument_parser.add_argument("-h", "--help")
+      .help("Display This Message And Exit")
+      .default_value(false)
+      .implicit_value(true);
+
+  argument_parser.add_argument("-V", "--version")
+      .help("Display Program Version")
+      .default_value(false)
+      .implicit_value(true);
+
+  try {
+    argument_parser.parse_args(argc, argv);
+  } catch (const std::exception& err) {
+    std::cerr << err.what() << std::endl;
+    std::cerr << argument_parser;
+    std::exit(1);
+  }
+
+  if (argument_parser.get<bool>("-h") || argument_parser.get<bool>("--help")) {
+    std::cout << argument_parser;
+    return 0;
+  }
+
   std::filesystem::path directory{};
 
   if (argc != 2) {
