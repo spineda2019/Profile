@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
   if (argument_parser.get<bool>("-h")) {
     std::cout << argument_parser;
     return 0;
-  } else if (argument_parser.get<bool>("-v")) {
+  } else if (argument_parser.get<bool>("-V")) {
     std::cout << "Profile 0.0.1" << std::endl;
     return 0;
   }
