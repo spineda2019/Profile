@@ -41,6 +41,8 @@ enum class CommentFormat : std::uint8_t {
 class Parser {
  public:
   Parser();
+  ~Parser() = default;
+
   [[nodiscard]] int ParseFiles(
       const std::filesystem::path& current_file) noexcept;
 
