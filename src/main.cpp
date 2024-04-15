@@ -28,19 +28,21 @@ SOFTWARE.
 #include "include/directory_validator.hpp"
 
 int main(int argc, char** argv) {
-  argparse::ArgumentParser argument_parser("main");
+  argparse::ArgumentParser argument_parser("Profile", "0.0.1",
+                                           argparse::default_arguments::none);
+
+  argument_parser.add_argument("--directory", "-d")
+      .help("Directory to Profile");
+
   argument_parser.add_argument("-h", "--help")
       .help("Display This Message And Exit")
       .default_value(false)
       .implicit_value(true);
 
-  argument_parser.add_argument("-V", "--version")
+  argument_parser.add_argument("-v", "--version")
       .help("Display Program Version")
       .default_value(false)
       .implicit_value(true);
-
-  argument_parser.add_argument("--directory", "-d")
-      .help("Directory to Profile");
 
   try {
     argument_parser.parse_args(argc, argv);
@@ -53,7 +55,7 @@ int main(int argc, char** argv) {
   if (argument_parser.get<bool>("-h")) {
     std::cout << argument_parser;
     return 0;
-  } else if (argument_parser.get<bool>("-V")) {
+  } else if (argument_parser.get<bool>("-v")) {
     std::cout << "Profile 0.0.1" << std::endl;
     std::cout << "Copyright (c) 2024 Sebastian Pineda" << std::endl;
     std::cout << "This software is licensed under the MIT license. You should "
