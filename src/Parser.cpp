@@ -36,10 +36,6 @@ SOFTWARE.
 #include <vector>
 
 namespace parser_info {
-namespace {
-constexpr std::array<const char*, 2> keywords{"TODO", "FIXME"};
-}
-
 Parser::Parser()
     : file_count_(0),
       keyword_pairs_{{
