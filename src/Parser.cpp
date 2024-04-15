@@ -42,22 +42,10 @@ constexpr std::array<const char*, 2> keywords{"TODO", "FIXME"};
 
 Parser::Parser()
     : file_count_(0),
-      keyword_pairs{{
+      keyword_pairs_{{
           {"TODO", 0},
           {"FIXME", 0},
       }} {}
-
-UnexpectedFileTypeException::UnexpectedFileTypeException(
-    std::filesystem::path bad_file)
-    : bad_file_(bad_file) {}
-
-const char* UnexpectedFileTypeException::what() const noexcept {
-  std::stringstream error_message("FATAL: Unexpected filetype found: ");
-  error_message << this->bad_file_;
-  std::string error_message_string = error_message.str();
-  const char* what_message = error_message_string.c_str();
-  return what_message;
-}
 
 const std::optional<CommentFormat> Parser::IsValidFile(
     const std::filesystem::path& file) const {
@@ -139,7 +127,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
       continue;
     }
 
-    for (auto [keyword, keyword_count] : this->keyword_pairs) {
+    for (auto [keyword, keyword_count] : this->keyword_pairs_) {
       position = line.find(keyword, comment_position.value());
       if (position != std::string::npos) {
         std::lock_guard lock(this->print_lock_);
@@ -159,7 +147,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   this->RecursivelyParseFiles(current_file);
 
   std::cout << "Files Profiled: " << this->file_count_ << std::endl;
-  for (const auto [keyword, keyword_count] : this->keyword_pairs) {
+  for (const auto [keyword, keyword_count] : this->keyword_pairs_) {
     std::cout << keyword << "s Found: " << keyword_count << std::endl;
   }  // TODO(not_a_real_todo) test
   std::cout << std::endl;
