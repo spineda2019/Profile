@@ -24,6 +24,7 @@ SOFTWARE.
 #define INCLUDE_PARSER_HPP_
 
 #include <array>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <mutex>
@@ -76,6 +77,8 @@ class Parser {
 
   std::mutex print_lock_;
   std::mutex markdown_lock_;
+
+  std::array<std::pair<const char*, std::size_t>, 2> keyword_pairs;
 
   static constexpr std::array<std::pair<const char*, CommentFormat>, 10>
       COMMENT_FORMATS{{
