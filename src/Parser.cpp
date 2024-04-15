@@ -41,9 +41,7 @@ constexpr std::array<const char*, 2> keywords{"TODO", "FIXME"};
 }
 
 Parser::Parser()
-    : todo_count_(0),
-      fixme_count_(0),
-      file_count_(0),
+    : file_count_(0),
       keyword_pairs{{
           {"TODO", 0},
           {"FIXME", 0},

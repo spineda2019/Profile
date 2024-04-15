@@ -71,8 +71,6 @@ class Parser {
   static bool AreWeLookingForDocumentation(
       const std::string& line, const std::filesystem::path& current_file);
 
-  std::size_t todo_count_;
-  std::size_t fixme_count_;
   std::size_t file_count_;
 
   std::mutex print_lock_;
