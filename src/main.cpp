@@ -57,7 +57,9 @@ int main(int argc, char** argv) {
     return 0;
   } else if (argument_parser.get<bool>("-v")) {
     std::cout << "Profile 0.0.1" << std::endl;
-    std::cout << "Copyright (c) 2024 Sebastian Pineda" << std::endl;
+    std::cout
+        << "Copyright (c) 2024 Sebastian Pineda (spineda.wpi.alum@gmail.com)"
+        << std::endl;
     std::cout << "This software is licensed under the MIT license. You should "
                  "have received it \nwith this copy of the software. If you "
                  "didn't, double check with your provider."
