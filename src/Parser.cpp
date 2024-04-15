@@ -22,6 +22,8 @@ SOFTWARE.
 
 #include "include/Parser.hpp"
 
+#include <bits/fs_dir.h>
+
 #include <algorithm>
 #include <execution>
 #include <filesystem>
@@ -31,7 +33,6 @@ SOFTWARE.
 #include <optional>
 #include <string>
 #include <string_view>
-#include <vector>
 
 namespace parser_info {
 Parser::Parser()
@@ -81,19 +82,12 @@ void Parser::RecursivelyParseFiles(
   }
 
   if (std::filesystem::is_directory(current_file)) {
-    std::vector<std::filesystem::path> directories{};
-    for (const auto& entry :
-         std::filesystem::directory_iterator(current_file)) {
-      if (std::filesystem::is_directory(entry)) {
-        directories.push_back(std::move(entry));
-      } else {
-        this->RecursivelyParseFiles(entry);
-      }
-    }
-    std::for_each(std::execution::par_unseq, directories.begin(),
-                  directories.end(),
-                  [this](const std::filesystem::path& directory) {
-                    this->RecursivelyParseFiles(directory);
+    std::filesystem::directory_iterator directory_iterator(current_file);
+    std::for_each(std::execution::par_unseq,
+                  std::filesystem::begin(directory_iterator),
+                  std::filesystem::end(directory_iterator),
+                  [this](const std::filesystem::path& entry) {
+                    this->RecursivelyParseFiles(entry);
                   });
   }
 
