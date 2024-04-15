@@ -22,7 +22,7 @@ output. However, if you are working in a large codebase, you can easily pipe
 this output to a file:
 
 ```zsh
-Profile path/to/directory > log.txt
+Profile -d path/to/directory > log.txt
 ```
 
 Any resulting errors are printed to standard error so you can easily see if
@@ -33,13 +33,13 @@ to profile a locked file without admin or sudo priviledges).
 Simply call the executable and give it a path on the command line like so:
 
 ```zsh
-Profile path/to/dir
+Profile -d path/to/dir
 ```
 
 When built on Windows, backslash notation also works:
 
 ```zsh
-Profile.exe path\to\dir
+Profile.exe -d path\to\dir
 ```
 
 If no path is specified, the current directory is chosen by default. That means
@@ -51,7 +51,7 @@ Profile
 is equivalent to
 
 ```zsh
-Profile .
+Profile -d .
 ```
 
 ## Compiling From Source
@@ -63,19 +63,32 @@ directory by typing the following in the Profile root directory:
 cmake -S . -B build
 ```
 
-and move to the build directory and build the program:
+and build the program:
 
 ```zsh
 cd build
-cmake --build . --config Release
+cmake --build build
+```
+
+pass whichever cmake flags you would like. I like using these for release builds:
+
+```zsh
+cmake -S . -B build -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS="-O3" -DCMAKE_BUILD_TYPE=Release
 ```
 
 You can then install the program to your machine's binary folder with:
 
 ```zsh
-sudo --install .
+cmake --install build
 ```
 
 If you are on windows, you will need to do this with admin priviledges. Also
 note that on Windows, you may need to add the <code>Profile</code> directory
-(created in your Program Files directory) to your path.
+(created in your Program Files directory) to your path. Be sure to use a single
+configuration cmake generator, otherwise these flags won't do anything (using
+the default Visual Studio generator requires this for example): 
+
+```zsh
+cmake -S . -B build
+cmake --build build --config Release
+```
