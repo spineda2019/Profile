@@ -35,15 +35,6 @@ SOFTWARE.
 
 namespace parser_info {
 
-class UnexpectedFileTypeException : std::exception {
- public:
-  explicit UnexpectedFileTypeException(std::filesystem::path bad_file);
-  const char* what() const noexcept;
-
- private:
-  std::filesystem::path bad_file_;
-};
-
 enum class CommentFormat : std::uint8_t {
   DoubleSlash,
   PoundSign,
