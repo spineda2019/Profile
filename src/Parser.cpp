@@ -36,8 +36,18 @@ SOFTWARE.
 #include <vector>
 
 namespace parser_info {
+namespace {
+constexpr std::array<const char*, 2> keywords{"TODO", "FIXME"};
+}
 
-Parser::Parser() : todo_count_(0), fixme_count_(0), file_count_(0) {}
+Parser::Parser()
+    : todo_count_(0),
+      fixme_count_(0),
+      file_count_(0),
+      keyword_pairs{{
+          {"TODO", 0},
+          {"FIXME", 0},
+      }} {}
 
 UnexpectedFileTypeException::UnexpectedFileTypeException(
     std::filesystem::path bad_file)
@@ -114,8 +124,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   std::size_t line_count = 0;
   std::string line{};
   std::optional<std::size_t> comment_position{};
-  std::size_t todo_position{};
-  std::size_t fixme_position{};
+  std::size_t position{};
   this->file_count_++;
 
   while (std::getline(file_stream, line)) {
@@ -132,26 +141,17 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
       continue;
     }
 
-    todo_position = line.find("TODO", comment_position.value());
-    fixme_position = line.find("FIXME", comment_position.value());
-    if (todo_position != std::string::npos) {
-      std::lock_guard lock(this->print_lock_);
-      std::cout << "TODO Found:" << std::endl
-                << "File: " << current_file << std::endl
-                << "Line Number: " << line_count << std::endl
-                << "Line: " << line << std::endl
-                << std::endl;
-      this->todo_count_++;
-    }
-
-    if (fixme_position != std::string::npos) {
-      std::lock_guard lock(this->print_lock_);
-      std::cout << "FIXME Found:" << std::endl
-                << "File: " << current_file << std::endl
-                << "Line Number: " << line_count << std::endl
-                << "Line: " << line << std::endl
-                << std::endl;
-      this->fixme_count_++;
+    for (auto [keyword, keyword_count] : this->keyword_pairs) {
+      position = line.find(keyword, comment_position.value());
+      if (position != std::string::npos) {
+        std::lock_guard lock(this->print_lock_);
+        std::cout << keyword << " Found:" << std::endl
+                  << "File: " << current_file << std::endl
+                  << "Line Number: " << line_count << std::endl
+                  << "Line: " << line << std::endl
+                  << std::endl;
+        keyword_count++;
+      }
     }
   }
 }
@@ -161,9 +161,10 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   this->RecursivelyParseFiles(current_file);
 
   std::cout << "Files Profiled: " << this->file_count_ << std::endl;
-  std::cout << "TODOs Found: " << this->todo_count_
-            << std::endl;  // TODO(not_a_real_todo) test
-  std::cout << "FIXMEs Found: " << this->fixme_count_ << std::endl << std::endl;
+  for (const auto [keyword, keyword_count] : this->keyword_pairs) {
+    std::cout << keyword << "s Found: " << keyword_count << std::endl;
+  }  // TODO(not_a_real_todo) test
+  std::cout << std::endl;
   return 0;
 }
 
