@@ -43,13 +43,13 @@ class Parser {
   Parser();
   ~Parser() = default;
 
-  [[nodiscard]] int ParseFiles(
-      const std::filesystem::path& current_file) noexcept;
+  void ParseFiles(const std::filesystem::path& current_file) noexcept;
 
  private:
   const std::optional<CommentFormat> IsValidFile(
       const std::filesystem::path& file) const;
-  void RecursivelyParseFiles(const std::filesystem::path& current_file);
+  void RecursivelyParseFiles(
+      const std::filesystem::path& current_file) noexcept;
 
   static std::optional<std::size_t> FindCommentPosition(
       const std::optional<CommentFormat>& comment_format,

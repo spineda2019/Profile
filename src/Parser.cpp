@@ -74,7 +74,8 @@ std::optional<std::size_t> Parser::FindCommentPosition(
   }
 }
 
-void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
+void Parser::RecursivelyParseFiles(
+    const std::filesystem::path& current_file) noexcept {
   if (std::filesystem::is_symlink(current_file)) {
     return;
   }
@@ -138,8 +139,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   }
 }
 
-[[nodiscard]] int Parser::ParseFiles(
-    const std::filesystem::path& current_file) noexcept {
+void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
   this->RecursivelyParseFiles(current_file);
 
   std::cout << "Files Profiled: " << this->file_count_ << std::endl;
@@ -147,7 +147,6 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
     std::cout << keyword << "s Found: " << keyword_count << std::endl;
   }  // TODO(not_a_real_todo) test
   std::cout << std::endl;
-  return 0;
 }
 
 }  // namespace parser_info
