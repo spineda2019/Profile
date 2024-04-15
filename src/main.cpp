@@ -65,14 +65,8 @@ int main(int argc, char** argv) {
   }
 
   std::optional<std::string> dir_str = argument_parser.present("-d");
-  std::filesystem::path directory{};
-
-  if (dir_str.has_value()) {
-    directory =
-        std::filesystem::canonical(std::filesystem::absolute(dir_str.value()));
-  } else {
-    directory = std::filesystem::canonical(std::filesystem::absolute("."));
-  }
+  std::filesystem::path directory(std::filesystem::canonical(
+      std::filesystem::absolute(dir_str.value_or("."))));
 
   std::cout << "Profiling Directory " << directory << std::endl << std::endl;
 
@@ -84,15 +78,7 @@ int main(int argc, char** argv) {
 
   parser_info::Parser parser{};
 
-  int parse_result = parser.ParseFiles(directory);
-  if (parse_result) {
-    return parse_result;
-  }
-
-  //   int markdown_result = parser.DocumentFiles(directory);
-  //   if (markdown_result) {
-  //     return markdown_result;
-  //   }
+  parser.ParseFiles(directory);
 
   return 0;
 }
