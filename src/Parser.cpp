@@ -27,10 +27,8 @@ SOFTWARE.
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <memory>
 #include <mutex>
 #include <optional>
-#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -152,89 +150,4 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   return 0;
 }
 
-bool Parser::AreWeLookingForDocumentation(
-    const std::string& line, const std::filesystem::path& current_file) {
-  /* TODO: Determine what we're looking for based on file */
-  return false;
-}
-
-void Parser::RecursivelyDocumentFiles(const std::filesystem::path& current_file,
-                                      std::ofstream& output_markdown) {
-  if (std::filesystem::is_symlink(current_file)) {
-    return;
-  }
-
-  if (std::filesystem::is_directory(current_file)) {
-    std::vector<std::filesystem::path> directories{};
-    for (const auto& entry :
-         std::filesystem::directory_iterator(current_file)) {
-      if (std::filesystem::is_directory(entry)) {
-        directories.push_back(std::move(entry));
-      } else {
-        this->RecursivelyDocumentFiles(entry, output_markdown);
-      }
-    }
-    std::for_each(
-        std::execution::par_unseq, directories.begin(), directories.end(),
-        [this, &output_markdown](const std::filesystem::path& directory) {
-          this->RecursivelyDocumentFiles(directory, output_markdown);
-        });
-  }
-
-  std::optional<CommentFormat> comment_format{this->IsValidFile(current_file)};
-  if (!comment_format.has_value()) {
-    return;
-  }
-
-  std::fstream file_stream(current_file);
-  std::string line{};
-  std::optional<std::size_t> comment_position{};
-  std::unique_ptr<std::vector<std::stringstream>> file_info =
-      std::make_unique<std::vector<std::stringstream>>();
-
-  std::stringstream title{};
-  title << "## Information About: " << current_file;
-  file_info->push_back(std::move(title));
-
-  bool looking = false;
-  while (std::getline(file_stream, line)) {
-    looking =
-        looking || Parser::AreWeLookingForDocumentation(line, current_file);
-    if (!looking) {
-      continue;
-    }
-
-    comment_position =
-        Parser::FindCommentPosition(comment_format, line, current_file);
-
-    if (!comment_position.has_value()) {
-      break;
-    }
-
-    if (comment_position.value() == std::string::npos) {
-      continue;
-    }
-  }
-
-  std::lock_guard<std::mutex> guard(this->markdown_lock_);
-  for (const std::stringstream& item : *file_info) {
-    output_markdown << item.str() << std::endl;
-  }
-}
-
-[[nodiscard]] int Parser::DocumentFiles(
-    const std::filesystem::path& root_folder) {
-  std::filesystem::path document_path(
-      std::filesystem::canonical(std::filesystem::absolute(".")));
-  document_path.append("Profile.md");
-
-  std::ofstream document_file(document_path);
-
-  document_file << "# " << document_path.parent_path() << std::endl;
-
-  this->RecursivelyDocumentFiles(root_folder, document_file);
-
-  document_file.close();
-  return 0;
-}
 }  // namespace parser_info

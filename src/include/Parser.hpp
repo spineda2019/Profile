@@ -26,10 +26,8 @@ SOFTWARE.
 #include <array>
 #include <cstddef>
 #include <filesystem>
-#include <fstream>
 #include <mutex>
 #include <optional>
-#include <string>
 #include <string_view>
 #include <utility>
 
@@ -45,22 +43,15 @@ class Parser {
   Parser();
   [[nodiscard]] int ParseFiles(
       const std::filesystem::path& current_file) noexcept;
-  [[nodiscard]] int DocumentFiles(const std::filesystem::path& root_folder);
 
  private:
   const std::optional<CommentFormat> IsValidFile(
       const std::filesystem::path& file) const;
   void RecursivelyParseFiles(const std::filesystem::path& current_file);
 
-  void RecursivelyDocumentFiles(const std::filesystem::path& current_file,
-                                std::ofstream& output_markdown);
-
   static std::optional<std::size_t> FindCommentPosition(
       const std::optional<CommentFormat>& comment_format,
       const std::string_view line, const std::filesystem::path& current_file);
-
-  static bool AreWeLookingForDocumentation(
-      const std::string& line, const std::filesystem::path& current_file);
 
  private:
   std::array<std::pair<const char*, std::size_t>, 4> keyword_pairs_;
