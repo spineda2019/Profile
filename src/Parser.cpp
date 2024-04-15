@@ -124,7 +124,7 @@ void Parser::RecursivelyParseFiles(
       continue;
     }
 
-    for (auto [keyword, keyword_count] : this->keyword_pairs_) {
+    for (auto& [keyword, keyword_count] : this->keyword_pairs_) {
       position = line.find(keyword, comment_position.value());
       if (position != std::string::npos) {
         std::lock_guard lock(this->print_lock_);
@@ -143,7 +143,7 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
   this->RecursivelyParseFiles(current_file);
 
   std::cout << "Files Profiled: " << this->file_count_ << std::endl;
-  for (const auto [keyword, keyword_count] : this->keyword_pairs_) {
+  for (const auto& [keyword, keyword_count] : this->keyword_pairs_) {
     std::cout << keyword << "s Found: " << keyword_count << std::endl;
   }  // TODO(not_a_real_todo) test
   std::cout << std::endl;
