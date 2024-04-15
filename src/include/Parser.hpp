@@ -63,7 +63,7 @@ class Parser {
       const std::string& line, const std::filesystem::path& current_file);
 
  private:
-  std::array<std::pair<const char*, std::size_t>, 2> keyword_pairs_;
+  std::array<std::pair<const char*, std::size_t>, 4> keyword_pairs_;
 
   std::mutex print_lock_;
   std::mutex markdown_lock_;

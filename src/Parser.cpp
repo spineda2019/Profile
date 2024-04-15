@@ -45,6 +45,8 @@ Parser::Parser()
       keyword_pairs_{{
           {"TODO", 0},
           {"FIXME", 0},
+          {"BUG", 0},
+          {"HACK", 0},
       }} {}
 
 const std::optional<CommentFormat> Parser::IsValidFile(
