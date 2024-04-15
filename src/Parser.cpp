@@ -46,7 +46,7 @@ Parser::Parser()
 const std::optional<CommentFormat> Parser::IsValidFile(
     const std::filesystem::path& file) const {
   std::filesystem::path extension(file.extension());
-  for (const auto [file_extension, classification] : Parser::COMMENT_FORMATS) {
+  for (const auto& [file_extension, classification] : Parser::COMMENT_FORMATS) {
     if (extension == file_extension) {
       return classification;
     }
