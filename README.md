@@ -1,11 +1,43 @@
 # Profile
-Development CLI to track todos, fixmes, and more
+Development CLI to track todos, fixmes, and more!
 
 ## What This Tool Does
-This tool tracks FIXMEs and TODOs in your project codebases and prints a
-summary to your standard output. A sample output could look like the following:
+This tool tracks FIXMEs, TODOs, HACKS, and more important comments in your
+project codebases and prints a summary to your standard output. 
+
+## Currently Supported Filetypes
+| Comment Format | Language           |
+| -------------- | ------------------ |
+| "//"           | C                  |
+| "//"           | C++                |
+| "//"           | C Headers          |
+| "//"           | C++ Headers (.hpp) |
+| "//"           | Javascript         |
+| "//"           | Rust               |
+| "//"           | Typescript         |
+| "//"           | Zig                |
+| "//"           | C#                 |
+| "#"            | Python             |
+
+Unrecognized file types are simply skipped over and do not effect the state of
+the program. This way, all of your config files, txt test files, or whatever
+else useful "non-code" you may have lying in your codebase will not effect this
+program!
+
+## Currently Supported Special Comments
+| Comment |
+| ------- |
+| TODO    |
+| HACK    |
+| FIXME   |
+| BUG     |
+
+## Examples
+A sample output could look like the following:
 
 ```txt
+Profile -l
+
 TODO Found:
 File: "foo/bar.cpp"
 Line Number: 144
@@ -14,15 +46,24 @@ Line:   std::size_t length_; // TODO: Change Type
 Files Profiled: 1212
 TODOs Found: 1
 FIXMEs Found: 0
+BUGs Found: 0
+HACKs Found: 0
+
+File Extension     |Files               
+--------------------------------------------------------------------------------
+.hpp               |2                   
+--------------------------------------------------------------------------------
+.cpp               |3                   
+--------------------------------------------------------------------------------
 ```
 
 This tool recursively profiles every file in the directory you specify, even
-files in other sub-directories! By default, these diagnostics print to standard
-output. However, if you are working in a large codebase, you can easily pipe
-this output to a file:
+files in other sub-directories! You can have these diagnostics print to standard
+output by specifying the <code>-l</code> flag. If you are working in a large
+codebase, you can easily pipe this output to a file:
 
 ```zsh
-Profile -d path/to/directory > log.txt
+Profile -d path/to/directory -l > log.txt
 ```
 
 Any resulting errors are printed to standard error so you can easily see if
@@ -34,6 +75,13 @@ Simply call the executable and give it a path on the command line like so:
 
 ```zsh
 Profile -d path/to/dir
+```
+
+Remember that the <code>-l</code> or <code>--log</code> flag enables reporting
+of where keywords are found in your codebase!
+
+```zsh
+Profile -d path/to/dir -l
 ```
 
 When built on Windows, backslash notation also works:
@@ -52,6 +100,12 @@ is equivalent to
 
 ```zsh
 Profile -d .
+```
+
+For other flags, see the help message:
+
+```zsh
+Profile -h
 ```
 
 ## Compiling From Source
