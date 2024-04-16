@@ -27,7 +27,7 @@ SOFTWARE.
 #include "include/Parser.hpp"
 #include "include/directory_validator.hpp"
 
-constexpr const char* version{"0.0.3"};
+constexpr const char* version{"0.0.4"};
 
 int main(int argc, char** argv) {
   argparse::ArgumentParser argument_parser("Profile", version,
