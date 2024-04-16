@@ -27,10 +27,10 @@ SOFTWARE.
 #include "include/Parser.hpp"
 #include "include/directory_validator.hpp"
 
-constexpr const char* version{"0.0.2"};
+constexpr const char* version{"0.0.3"};
 
 int main(int argc, char** argv) {
-  argparse::ArgumentParser argument_parser("Profile", "0.0.1",
+  argparse::ArgumentParser argument_parser("Profile", version,
                                            argparse::default_arguments::none);
 
   argument_parser.add_argument("--directory", "-d")
