@@ -33,6 +33,7 @@ SOFTWARE.
 #include <iostream>
 #include <mutex>
 #include <optional>
+#include <regex>
 #include <string>
 #include <string_view>
 
@@ -42,10 +43,10 @@ Parser::Parser(const bool&& verbose_printing)
       file_type_frequencies_{},
       file_count_(0),
       keyword_pairs_{{
-          {" TODO ", 0},
-          {" FIXME ", 0},
-          {" BUG ", 0},
-          {" HACK ", 0},
+          {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
+          {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
+          {std::regex("\\bBUG(\\(\\w*\\))?"), 0, "BUG"},
+          {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
       }} {}
 
 namespace {
@@ -136,13 +137,16 @@ void Parser::RecursivelyParseFiles(
       continue;
     }
 
+    std::smatch match_result{};
+    std::string::iterator start{line.begin() + comment_position.value()};
+    std::string sub_str(start, line.end());
     if (this->verbose_printing_) {
-      for (auto& [keyword, keyword_count] : this->keyword_pairs_) {
-        position = line.find(keyword, comment_position.value());
-        if (position != std::string::npos) {
+      for (auto& [keyword_regex, keyword_count, keyword_literal] :
+           this->keyword_pairs_) {
+        if (std::regex_search(sub_str, match_result, keyword_regex)) {
           {
             std::lock_guard lock(this->print_lock_);
-            std::cout << keyword << " Found:" << std::endl
+            std::cout << keyword_literal << " Found:" << std::endl
                       << "File: " << current_file << std::endl
                       << "Line Number: " << line_count << std::endl
                       << "Line: " << line << std::endl
@@ -152,9 +156,8 @@ void Parser::RecursivelyParseFiles(
         }
       }
     } else {
-      for (auto& [keyword, keyword_count] : this->keyword_pairs_) {
-        position = line.find(keyword, comment_position.value());
-        if (position != std::string::npos) {
+      for (auto& [keyword_regex, keyword_count, _] : this->keyword_pairs_) {
+        if (std::regex_search(sub_str, match_result, keyword_regex)) {
           keyword_count++;
         }
       }
@@ -183,8 +186,9 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
   this->RecursivelyParseFiles(current_file);
 
   std::cout << "Files Profiled: " << this->file_count_ << std::endl;
-  for (const auto& [keyword, keyword_count] : this->keyword_pairs_) {
-    std::cout << Trim(keyword) << "s Found: " << keyword_count << std::endl;
+  for (const auto& [_, keyword_count, keyword_literal] : this->keyword_pairs_) {
+    std::cout << Trim(keyword_literal) << "s Found: " << keyword_count
+              << std::endl;
   }  // TODO(not_a_real_todo) test
   this->ReportSummary();
   std::cout << std::endl;
