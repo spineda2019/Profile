@@ -50,17 +50,6 @@ Parser::Parser(const bool&& verbose_printing)
       }} {}
 
 namespace {
-inline constexpr std::string_view Trim(const std::string_view full_view) {
-  std::size_t start{full_view.find_first_not_of(" \t\r\n\v\f")};
-  std::size_t end{full_view.find_last_not_of(" \t\r\n\v\f")};
-
-  if (start != std::string_view::npos && end != std::string_view::npos)
-    return full_view.substr(start, end - start + 1);
-  else {
-    return "";
-  }
-}
-
 inline std::optional<std::size_t> FindCommentPosition(
     const std::optional<CommentFormat>& comment_format,
     const std::string_view line, const std::filesystem::path& current_file) {
@@ -122,6 +111,7 @@ void Parser::RecursivelyParseFiles(
   std::string line{};
   std::optional<std::size_t> comment_position{};
   std::size_t position{};
+  std::string::iterator start{};
   this->file_count_++;
 
   while (std::getline(file_stream, line)) {
@@ -137,13 +127,12 @@ void Parser::RecursivelyParseFiles(
       continue;
     }
 
-    std::smatch match_result{};
-    std::string::iterator start{line.begin() + comment_position.value()};
+    start = line.begin() + comment_position.value();
     std::string sub_str(start, line.end());
     if (this->verbose_printing_) {
       for (auto& [keyword_regex, keyword_count, keyword_literal] :
            this->keyword_pairs_) {
-        if (std::regex_search(sub_str, match_result, keyword_regex)) {
+        if (std::regex_search(std::move(sub_str), keyword_regex)) {
           {
             std::lock_guard lock(this->print_lock_);
             std::cout << keyword_literal << " Found:" << std::endl
@@ -157,7 +146,7 @@ void Parser::RecursivelyParseFiles(
       }
     } else {
       for (auto& [keyword_regex, keyword_count, _] : this->keyword_pairs_) {
-        if (std::regex_search(sub_str, match_result, keyword_regex)) {
+        if (std::regex_search(std::move(sub_str), keyword_regex)) {
           keyword_count++;
         }
       }
@@ -187,8 +176,7 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
 
   std::cout << "Files Profiled: " << this->file_count_ << std::endl;
   for (const auto& [_, keyword_count, keyword_literal] : this->keyword_pairs_) {
-    std::cout << Trim(keyword_literal) << "s Found: " << keyword_count
-              << std::endl;
+    std::cout << keyword_literal << "s Found: " << keyword_count << std::endl;
   }  // TODO(not_a_real_todo) test
   this->ReportSummary();
   std::cout << std::endl;
