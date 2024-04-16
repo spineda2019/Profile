@@ -39,18 +39,7 @@ SOFTWARE.
 namespace parser_info {
 Parser::Parser(const bool&& verbose_printing)
     : verbose_printing_(verbose_printing),
-      file_type_frequencies_{{
-          {".c", 0},
-          {".cpp", 0},
-          {".h", 0},
-          {".hpp", 0},
-          {".js", 0},
-          {".rs", 0},
-          {".ts", 0},
-          {".zig", 0},
-          {".cs", 0},
-          {".py", 0},
-      }},
+      file_type_frequencies_{},
       file_count_(0),
       keyword_pairs_{{
           {"TODO", 0},
@@ -64,6 +53,7 @@ const std::optional<CommentFormat> Parser::IsValidFile(
   std::filesystem::path extension(file.extension());
   for (const auto& [file_extension, classification] : Parser::COMMENT_FORMATS) {
     if (extension == file_extension) {
+      this->file_type_frequencies_.try_emplace(file_extension, 0);
       this->file_type_frequencies_[file_extension]++;
       return classification;
     }
