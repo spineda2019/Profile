@@ -29,6 +29,7 @@ SOFTWARE.
 #include <mutex>
 #include <optional>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 
 namespace parser_info {
@@ -47,7 +48,7 @@ class Parser {
 
  private:
   const std::optional<CommentFormat> IsValidFile(
-      const std::filesystem::path& file) const;
+      const std::filesystem::path& file);
 
   void ReportSummary() const;
 
@@ -59,6 +60,7 @@ class Parser {
       const std::string_view line, const std::filesystem::path& current_file);
 
  private:
+  std::unordered_map<std::string_view, std::size_t> file_type_frequencies_;
   std::array<std::pair<const char*, std::size_t>, 4> keyword_pairs_;
 
   std::mutex print_lock_;
