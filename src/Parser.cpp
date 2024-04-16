@@ -51,21 +51,15 @@ Parser::Parser(const bool&& verbose_printing)
 
 namespace {
 inline std::optional<std::size_t> FindCommentPosition(
-    const std::optional<CommentFormat>& comment_format,
-    const std::string_view line, const std::filesystem::path& current_file) {
-  if (!comment_format.has_value()) {
-    std::cerr << "Unexpected file type: " << current_file.extension()
-              << std::endl;
-    return std::nullopt;
-  } else {
-    switch (comment_format.value()) {
-      case CommentFormat::DoubleSlash:
-        return line.find("//");
-        break;
-      case CommentFormat::PoundSign:
-        return line.find("#");
-        break;
-    }
+    const CommentFormat& comment_format, const std::string_view line,
+    const std::filesystem::path& current_file) {
+  switch (comment_format) {
+    case CommentFormat::DoubleSlash:
+      return line.find("//");
+      break;
+    case CommentFormat::PoundSign:
+      return line.find("#");
+      break;
   }
 }
 }  // namespace
@@ -117,7 +111,8 @@ void Parser::RecursivelyParseFiles(
   while (std::getline(file_stream, line)) {
     line_count++;
 
-    comment_position = FindCommentPosition(comment_format, line, current_file);
+    comment_position =
+        FindCommentPosition(comment_format.value(), line, current_file);
 
     if (!comment_position.has_value()) {
       break;
