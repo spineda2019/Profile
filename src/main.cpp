@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
       .help("Directory to Profile");
 
   argument_parser.add_argument("--log", "-l")
-      .help("Directory to Profile")
+      .help("Log Found Comment to Stdout")
       .flag();
 
   argument_parser.add_argument("-h", "--help")
