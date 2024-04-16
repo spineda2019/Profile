@@ -24,12 +24,8 @@ SOFTWARE.
 #define INCLUDE_DIRECTORY_VALIDATOR_HPP_
 
 #include <filesystem>
-#include <vector>
 
 namespace directory_validation {
 bool DirectoryExists(const std::filesystem::path& directory_name);
-
-void GetFilesToProfile(const std::filesystem::path& directory,
-                       std::vector<std::filesystem::path>& found_files);
 }  // namespace directory_validation
 #endif  // INCLUDE_DIRECTORY_VALIDATOR_HPP_
