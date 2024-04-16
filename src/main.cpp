@@ -38,13 +38,11 @@ int main(int argc, char** argv) {
 
   argument_parser.add_argument("-h", "--help")
       .help("Display This Message And Exit")
-      .default_value(false)
-      .implicit_value(true);
+      .flag();
 
   argument_parser.add_argument("-v", "--version")
       .help("Display Program Version")
-      .default_value(false)
-      .implicit_value(true);
+      .flag();
 
   try {
     argument_parser.parse_args(argc, argv);
