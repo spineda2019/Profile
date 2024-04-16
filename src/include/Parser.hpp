@@ -48,6 +48,9 @@ class Parser {
  private:
   const std::optional<CommentFormat> IsValidFile(
       const std::filesystem::path& file) const;
+
+  void ReportSummary() const;
+
   void RecursivelyParseFiles(
       const std::filesystem::path& current_file) noexcept;
 
