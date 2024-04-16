@@ -36,6 +36,10 @@ int main(int argc, char** argv) {
   argument_parser.add_argument("--directory", "-d")
       .help("Directory to Profile");
 
+  argument_parser.add_argument("--log", "-l")
+      .help("Directory to Profile")
+      .flag();
+
   argument_parser.add_argument("-h", "--help")
       .help("Display This Message And Exit")
       .flag();
@@ -80,7 +84,7 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  parser_info::Parser parser{};
+  parser_info::Parser parser{argument_parser.get<bool>("-l")};
 
   parser.ParseFiles(directory);
 
