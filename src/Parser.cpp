@@ -115,7 +115,7 @@ void Parser::RecursivelyParseFiles(
         FindCommentPosition(comment_format.value(), line, current_file);
 
     if (!comment_position.has_value()) {
-      break;
+      return;
     }
 
     if (comment_position.value() == std::string::npos) {
