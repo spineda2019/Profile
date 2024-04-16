@@ -28,6 +28,8 @@ SOFTWARE.
 #include <execution>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
+#include <ios>
 #include <iostream>
 #include <mutex>
 #include <optional>
@@ -37,27 +39,28 @@ SOFTWARE.
 namespace parser_info {
 Parser::Parser(const bool&& verbose_printing)
     : verbose_printing_(verbose_printing),
+      file_type_frequencies_{},
       file_count_(0),
       keyword_pairs_{{
-          {"TODO", 0},
-          {"FIXME", 0},
-          {"BUG", 0},
-          {"HACK", 0},
+          {" TODO ", 0},
+          {" FIXME ", 0},
+          {" BUG ", 0},
+          {" HACK ", 0},
       }} {}
 
-const std::optional<CommentFormat> Parser::IsValidFile(
-    const std::filesystem::path& file) const {
-  std::filesystem::path extension(file.extension());
-  for (const auto& [file_extension, classification] : Parser::COMMENT_FORMATS) {
-    if (extension == file_extension) {
-      return classification;
-    }
-  }
+namespace {
+inline constexpr std::string_view Trim(const std::string_view full_view) {
+  std::size_t start{full_view.find_first_not_of(" \t\r\n\v\f")};
+  std::size_t end{full_view.find_last_not_of(" \t\r\n\v\f")};
 
-  return std::nullopt;
+  if (start != std::string_view::npos && end != std::string_view::npos)
+    return full_view.substr(start, end - start + 1);
+  else {
+    return "";
+  }
 }
 
-std::optional<std::size_t> Parser::FindCommentPosition(
+inline std::optional<std::size_t> FindCommentPosition(
     const std::optional<CommentFormat>& comment_format,
     const std::string_view line, const std::filesystem::path& current_file) {
   if (!comment_format.has_value()) {
@@ -74,6 +77,21 @@ std::optional<std::size_t> Parser::FindCommentPosition(
         break;
     }
   }
+}
+}  // namespace
+
+const std::optional<CommentFormat> Parser::IsValidFile(
+    const std::filesystem::path& file) {
+  std::filesystem::path extension(file.extension());
+  for (const auto& [file_extension, classification] : Parser::COMMENT_FORMATS) {
+    if (extension == file_extension) {
+      this->file_type_frequencies_.try_emplace(file_extension, 0);
+      this->file_type_frequencies_[file_extension]++;
+      return classification;
+    }
+  }
+
+  return std::nullopt;
 }
 
 void Parser::RecursivelyParseFiles(
@@ -108,8 +126,7 @@ void Parser::RecursivelyParseFiles(
   while (std::getline(file_stream, line)) {
     line_count++;
 
-    comment_position =
-        Parser::FindCommentPosition(comment_format, line, current_file);
+    comment_position = FindCommentPosition(comment_format, line, current_file);
 
     if (!comment_position.has_value()) {
       break;
@@ -145,13 +162,31 @@ void Parser::RecursivelyParseFiles(
   }
 }
 
+void Parser::ReportSummary() const {
+  std::cout << std::endl
+            << std::left << std::setw(19) << "File Extension" << std::left
+            << "|" << std::left << std::setw(20) << "Files" << std::endl;
+  std::cout << "---------------------------------------------------------------"
+               "-----------------"
+            << std::endl;
+  for (const auto& [file_extension, frequency] : this->file_type_frequencies_) {
+    std::cout << std::left << std::setw(19) << file_extension << "|"
+              << std::setw(20) << frequency << std::endl;
+    std::cout
+        << "---------------------------------------------------------------"
+           "-----------------"
+        << std::endl;
+  }
+}
+
 void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
   this->RecursivelyParseFiles(current_file);
 
   std::cout << "Files Profiled: " << this->file_count_ << std::endl;
   for (const auto& [keyword, keyword_count] : this->keyword_pairs_) {
-    std::cout << keyword << "s Found: " << keyword_count << std::endl;
+    std::cout << Trim(keyword) << "s Found: " << keyword_count << std::endl;
   }  // TODO(not_a_real_todo) test
+  this->ReportSummary();
   std::cout << std::endl;
 }
 

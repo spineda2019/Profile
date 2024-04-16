@@ -29,6 +29,7 @@ SOFTWARE.
 #include <mutex>
 #include <optional>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 
 namespace parser_info {
@@ -40,23 +41,23 @@ enum class CommentFormat : std::uint8_t {
 
 class Parser {
  public:
-  Parser(const bool&& verbose_printing);
+  explicit Parser(const bool&& verbose_printing);
   ~Parser() = default;
 
   void ParseFiles(const std::filesystem::path& current_file) noexcept;
 
  private:
   const std::optional<CommentFormat> IsValidFile(
-      const std::filesystem::path& file) const;
+      const std::filesystem::path& file);
+
+  void ReportSummary() const;
+
   void RecursivelyParseFiles(
       const std::filesystem::path& current_file) noexcept;
 
-  static std::optional<std::size_t> FindCommentPosition(
-      const std::optional<CommentFormat>& comment_format,
-      const std::string_view line, const std::filesystem::path& current_file);
-
  private:
-  std::array<std::pair<const char*, std::size_t>, 4> keyword_pairs_;
+  std::unordered_map<std::string_view, std::size_t> file_type_frequencies_;
+  std::array<std::pair<std::string_view, std::size_t>, 4> keyword_pairs_;
 
   std::mutex print_lock_;
   std::mutex markdown_lock_;
@@ -65,7 +66,7 @@ class Parser {
 
   bool verbose_printing_;
 
-  static constexpr std::array<std::pair<const char*, CommentFormat>, 10>
+  static constexpr std::array<std::pair<std::string_view, CommentFormat>, 10>
       COMMENT_FORMATS{{
           {".c", CommentFormat::DoubleSlash},
           {".cpp", CommentFormat::DoubleSlash},
