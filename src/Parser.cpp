@@ -123,12 +123,14 @@ void Parser::RecursivelyParseFiles(
       for (auto& [keyword, keyword_count] : this->keyword_pairs_) {
         position = line.find(keyword, comment_position.value());
         if (position != std::string::npos) {
-          std::lock_guard lock(this->print_lock_);
-          std::cout << keyword << " Found:" << std::endl
-                    << "File: " << current_file << std::endl
-                    << "Line Number: " << line_count << std::endl
-                    << "Line: " << line << std::endl
-                    << std::endl;
+          {
+            std::lock_guard lock(this->print_lock_);
+            std::cout << keyword << " Found:" << std::endl
+                      << "File: " << current_file << std::endl
+                      << "Line Number: " << line_count << std::endl
+                      << "Line: " << line << std::endl
+                      << std::endl;
+          }
           keyword_count++;
         }
       }
