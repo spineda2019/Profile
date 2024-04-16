@@ -28,6 +28,8 @@ SOFTWARE.
 #include <execution>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
+#include <ios>
 #include <iostream>
 #include <mutex>
 #include <optional>
@@ -37,6 +39,18 @@ SOFTWARE.
 namespace parser_info {
 Parser::Parser(const bool&& verbose_printing)
     : verbose_printing_(verbose_printing),
+      file_type_frequencies_{{
+          {".c", 0},
+          {".cpp", 0},
+          {".h", 0},
+          {".hpp", 0},
+          {".js", 0},
+          {".rs", 0},
+          {".ts", 0},
+          {".zig", 0},
+          {".cs", 0},
+          {".py", 0},
+      }},
       file_count_(0),
       keyword_pairs_{{
           {"TODO", 0},
@@ -46,10 +60,11 @@ Parser::Parser(const bool&& verbose_printing)
       }} {}
 
 const std::optional<CommentFormat> Parser::IsValidFile(
-    const std::filesystem::path& file) const {
+    const std::filesystem::path& file) {
   std::filesystem::path extension(file.extension());
   for (const auto& [file_extension, classification] : Parser::COMMENT_FORMATS) {
     if (extension == file_extension) {
+      this->file_type_frequencies_[file_extension]++;
       return classification;
     }
   }
@@ -145,6 +160,23 @@ void Parser::RecursivelyParseFiles(
   }
 }
 
+void Parser::ReportSummary() const {
+  std::cout << std::endl
+            << std::left << std::setw(19) << "File Extension" << std::left
+            << "|" << std::left << std::setw(20) << "Files" << std::endl;
+  std::cout << "---------------------------------------------------------------"
+               "-----------------"
+            << std::endl;
+  for (const auto& [file_extension, frequency] : this->file_type_frequencies_) {
+    std::cout << std::left << std::setw(19) << file_extension << "|"
+              << std::setw(20) << frequency << std::endl;
+    std::cout
+        << "---------------------------------------------------------------"
+           "-----------------"
+        << std::endl;
+  }
+}
+
 void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
   this->RecursivelyParseFiles(current_file);
 
@@ -152,6 +184,7 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
   for (const auto& [keyword, keyword_count] : this->keyword_pairs_) {
     std::cout << keyword << "s Found: " << keyword_count << std::endl;
   }  // TODO(not_a_real_todo) test
+  this->ReportSummary();
   std::cout << std::endl;
 }
 
