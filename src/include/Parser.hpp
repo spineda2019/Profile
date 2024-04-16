@@ -40,7 +40,7 @@ enum class CommentFormat : std::uint8_t {
 
 class Parser {
  public:
-  Parser(const bool&& verbose_printing);
+  explicit Parser(const bool&& verbose_printing);
   ~Parser() = default;
 
   void ParseFiles(const std::filesystem::path& current_file) noexcept;
