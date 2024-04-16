@@ -27,6 +27,8 @@ SOFTWARE.
 #include "include/Parser.hpp"
 #include "include/directory_validator.hpp"
 
+constexpr const char* version{"0.0.2"};
+
 int main(int argc, char** argv) {
   argparse::ArgumentParser argument_parser("Profile", "0.0.1",
                                            argparse::default_arguments::none);
@@ -56,7 +58,7 @@ int main(int argc, char** argv) {
     std::cout << argument_parser;
     return 0;
   } else if (argument_parser.get<bool>("-v")) {
-    std::cout << "Profile 0.0.1" << std::endl;
+    std::cout << "Profile " << version << std::endl;
     std::cout
         << "Copyright (c) 2024 Sebastian Pineda (spineda.wpi.alum@gmail.com)"
         << std::endl;
