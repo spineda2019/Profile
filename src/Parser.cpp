@@ -119,16 +119,25 @@ void Parser::RecursivelyParseFiles(
       continue;
     }
 
-    for (auto& [keyword, keyword_count] : this->keyword_pairs_) {
-      position = line.find(keyword, comment_position.value());
-      if (position != std::string::npos) {
-        std::lock_guard lock(this->print_lock_);
-        std::cout << keyword << " Found:" << std::endl
-                  << "File: " << current_file << std::endl
-                  << "Line Number: " << line_count << std::endl
-                  << "Line: " << line << std::endl
-                  << std::endl;
-        keyword_count++;
+    if (this->verbose_printing_) {
+      for (auto& [keyword, keyword_count] : this->keyword_pairs_) {
+        position = line.find(keyword, comment_position.value());
+        if (position != std::string::npos) {
+          std::lock_guard lock(this->print_lock_);
+          std::cout << keyword << " Found:" << std::endl
+                    << "File: " << current_file << std::endl
+                    << "Line Number: " << line_count << std::endl
+                    << "Line: " << line << std::endl
+                    << std::endl;
+          keyword_count++;
+        }
+      }
+    } else {
+      for (auto& [keyword, keyword_count] : this->keyword_pairs_) {
+        position = line.find(keyword, comment_position.value());
+        if (position != std::string::npos) {
+          keyword_count++;
+        }
       }
     }
   }
