@@ -61,7 +61,7 @@ class Parser {
 
  private:
   std::unordered_map<std::string_view, std::size_t> file_type_frequencies_;
-  std::array<std::pair<const char*, std::size_t>, 4> keyword_pairs_;
+  std::array<std::pair<std::string_view, std::size_t>, 4> keyword_pairs_;
 
   std::mutex print_lock_;
   std::mutex markdown_lock_;
