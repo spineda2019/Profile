@@ -35,8 +35,9 @@ SOFTWARE.
 #include <string_view>
 
 namespace parser_info {
-Parser::Parser()
-    : file_count_(0),
+Parser::Parser(const bool&& verbose_printing)
+    : verbose_printing_(verbose_printing),
+      file_count_(0),
       keyword_pairs_{{
           {"TODO", 0},
           {"FIXME", 0},
