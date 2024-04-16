@@ -106,7 +106,8 @@ void Parser::RecursivelyParseFiles(
     std::for_each(std::execution::par_unseq, directories.begin(),
                   directories.end(),
                   [this](const std::filesystem::path& directory) {
-      this->RecursivelyParseFiles(directory);
+                    this->RecursivelyParseFiles(directory);
+                  });
   }
 #else
   if (std::filesystem::is_directory(current_file)) {
@@ -123,7 +124,7 @@ void Parser::RecursivelyParseFiles(
   std::optional<CommentFormat> comment_format{this->IsValidFile(current_file)};
 
   if (!comment_format.has_value()) {
-      return;
+    return;
   }
 
   std::ifstream file_stream(current_file);
@@ -135,73 +136,70 @@ void Parser::RecursivelyParseFiles(
   this->file_count_++;
 
   while (std::getline(file_stream, line)) {
-      line_count++;
+    line_count++;
 
-      comment_position =
-          FindCommentPosition(comment_format.value(), line, current_file);
+    comment_position =
+        FindCommentPosition(comment_format.value(), line, current_file);
 
-      if (!comment_position.has_value()) {
-        return;
-      } else if (comment_position.value() == std::string::npos) {
-        continue;
-      }
+    if (!comment_position.has_value()) {
+      return;
+    } else if (comment_position.value() == std::string::npos) {
+      continue;
+    }
 
-      start = line.begin() + comment_position.value();
-      std::string sub_str(start, line.end());
-      if (this->verbose_printing_) {
-        for (auto& [keyword_regex, keyword_count, keyword_literal] :
-             this->keyword_pairs_) {
-          if (std::regex_search(std::move(sub_str), keyword_regex)) {
-            {
-              std::lock_guard lock(this->print_lock_);
-              std::cout << keyword_literal << " Found:" << std::endl
-                        << "File: " << current_file << std::endl
-                        << "Line Number: " << line_count << std::endl
-                        << "Line: " << line << std::endl
-                        << std::endl;
-            }
-            keyword_count++;
+    start = line.begin() + comment_position.value();
+    std::string sub_str(start, line.end());
+    if (this->verbose_printing_) {
+      for (auto& [keyword_regex, keyword_count, keyword_literal] :
+           this->keyword_pairs_) {
+        if (std::regex_search(std::move(sub_str), keyword_regex)) {
+          {
+            std::lock_guard lock(this->print_lock_);
+            std::cout << keyword_literal << " Found:" << std::endl
+                      << "File: " << current_file << std::endl
+                      << "Line Number: " << line_count << std::endl
+                      << "Line: " << line << std::endl
+                      << std::endl;
           }
-        }
-      } else {
-        for (auto& [keyword_regex, keyword_count, _] : this->keyword_pairs_) {
-          if (std::regex_search(std::move(sub_str), keyword_regex)) {
-            keyword_count++;
-          }
+          keyword_count++;
         }
       }
+    } else {
+      for (auto& [keyword_regex, keyword_count, _] : this->keyword_pairs_) {
+        if (std::regex_search(std::move(sub_str), keyword_regex)) {
+          keyword_count++;
+        }
+      }
+    }
   }
-  }
+}
 
-  void Parser::ReportSummary() const {
-    std::cout << std::endl
-              << std::left << std::setw(19) << "File Extension" << std::left
-              << "|" << std::left << std::setw(20) << "Files" << std::endl;
+void Parser::ReportSummary() const {
+  std::cout << std::endl
+            << std::left << std::setw(19) << "File Extension" << std::left
+            << "|" << std::left << std::setw(20) << "Files" << std::endl;
+  std::cout << "---------------------------------------------------------------"
+               "-----------------"
+            << std::endl;
+  for (const auto& [file_extension, frequency] : this->file_type_frequencies_) {
+    std::cout << std::left << std::setw(19) << file_extension << "|"
+              << std::setw(20) << frequency << std::endl;
     std::cout
         << "---------------------------------------------------------------"
            "-----------------"
         << std::endl;
-    for (const auto& [file_extension, frequency] :
-         this->file_type_frequencies_) {
-      std::cout << std::left << std::setw(19) << file_extension << "|"
-                << std::setw(20) << frequency << std::endl;
-      std::cout
-          << "---------------------------------------------------------------"
-             "-----------------"
-          << std::endl;
-    }
   }
+}
 
-  void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
-    this->RecursivelyParseFiles(current_file);
+void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
+  this->RecursivelyParseFiles(current_file);
 
-    std::cout << "Files Profiled: " << this->file_count_ << std::endl;
-    for (const auto& [_, keyword_count, keyword_literal] :
-         this->keyword_pairs_) {
-      std::cout << keyword_literal << "s Found: " << keyword_count << std::endl;
-    }  // TODO(not_a_real_todo) test
-    this->ReportSummary();
-    std::cout << std::endl;
-  }
+  std::cout << "Files Profiled: " << this->file_count_ << std::endl;
+  for (const auto& [_, keyword_count, keyword_literal] : this->keyword_pairs_) {
+    std::cout << keyword_literal << "s Found: " << keyword_count << std::endl;
+  }  // TODO(not_a_real_todo) test
+  this->ReportSummary();
+  std::cout << std::endl;
+}
 
 }  // namespace parser_info
