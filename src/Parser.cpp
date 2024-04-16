@@ -59,23 +59,8 @@ inline constexpr std::string_view Trim(const std::string_view full_view) {
     return "";
   }
 }
-}  // namespace
 
-const std::optional<CommentFormat> Parser::IsValidFile(
-    const std::filesystem::path& file) {
-  std::filesystem::path extension(file.extension());
-  for (const auto& [file_extension, classification] : Parser::COMMENT_FORMATS) {
-    if (extension == file_extension) {
-      this->file_type_frequencies_.try_emplace(file_extension, 0);
-      this->file_type_frequencies_[file_extension]++;
-      return classification;
-    }
-  }
-
-  return std::nullopt;
-}
-
-std::optional<std::size_t> Parser::FindCommentPosition(
+inline std::optional<std::size_t> FindCommentPosition(
     const std::optional<CommentFormat>& comment_format,
     const std::string_view line, const std::filesystem::path& current_file) {
   if (!comment_format.has_value()) {
@@ -92,6 +77,21 @@ std::optional<std::size_t> Parser::FindCommentPosition(
         break;
     }
   }
+}
+}  // namespace
+
+const std::optional<CommentFormat> Parser::IsValidFile(
+    const std::filesystem::path& file) {
+  std::filesystem::path extension(file.extension());
+  for (const auto& [file_extension, classification] : Parser::COMMENT_FORMATS) {
+    if (extension == file_extension) {
+      this->file_type_frequencies_.try_emplace(file_extension, 0);
+      this->file_type_frequencies_[file_extension]++;
+      return classification;
+    }
+  }
+
+  return std::nullopt;
 }
 
 void Parser::RecursivelyParseFiles(
@@ -126,8 +126,7 @@ void Parser::RecursivelyParseFiles(
   while (std::getline(file_stream, line)) {
     line_count++;
 
-    comment_position =
-        Parser::FindCommentPosition(comment_format, line, current_file);
+    comment_position = FindCommentPosition(comment_format, line, current_file);
 
     if (!comment_position.has_value()) {
       break;

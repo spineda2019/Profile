@@ -55,10 +55,6 @@ class Parser {
   void RecursivelyParseFiles(
       const std::filesystem::path& current_file) noexcept;
 
-  static std::optional<std::size_t> FindCommentPosition(
-      const std::optional<CommentFormat>& comment_format,
-      const std::string_view line, const std::filesystem::path& current_file);
-
  private:
   std::unordered_map<std::string_view, std::size_t> file_type_frequencies_;
   std::array<std::pair<std::string_view, std::size_t>, 4> keyword_pairs_;
