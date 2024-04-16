@@ -70,7 +70,7 @@ class Parser {
 
   bool verbose_printing_;
 
-  static constexpr std::array<std::pair<const char*, CommentFormat>, 10>
+  static constexpr std::array<std::pair<std::string_view, CommentFormat>, 10>
       COMMENT_FORMATS{{
           {".c", CommentFormat::DoubleSlash},
           {".cpp", CommentFormat::DoubleSlash},
