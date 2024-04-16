@@ -42,11 +42,24 @@ Parser::Parser(const bool&& verbose_printing)
       file_type_frequencies_{},
       file_count_(0),
       keyword_pairs_{{
-          {"TODO", 0},
-          {"FIXME", 0},
-          {"BUG", 0},
-          {"HACK", 0},
+          {" TODO ", 0},
+          {" FIXME ", 0},
+          {" BUG ", 0},
+          {" HACK ", 0},
       }} {}
+
+namespace {
+inline constexpr std::string_view Trim(const std::string_view full_view) {
+  std::size_t start{full_view.find_first_not_of(" \t\r\n\v\f")};
+  std::size_t end{full_view.find_last_not_of(" \t\r\n\v\f")};
+
+  if (start != std::string_view::npos && end != std::string_view::npos)
+    return full_view.substr(start, end - start + 1);
+  else {
+    return "";
+  }
+}
+}  // namespace
 
 const std::optional<CommentFormat> Parser::IsValidFile(
     const std::filesystem::path& file) {
@@ -172,7 +185,7 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
 
   std::cout << "Files Profiled: " << this->file_count_ << std::endl;
   for (const auto& [keyword, keyword_count] : this->keyword_pairs_) {
-    std::cout << keyword << "s Found: " << keyword_count << std::endl;
+    std::cout << Trim(keyword) << "s Found: " << keyword_count << std::endl;
   }  // TODO(not_a_real_todo) test
   this->ReportSummary();
   std::cout << std::endl;
