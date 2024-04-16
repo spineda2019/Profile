@@ -22,8 +22,6 @@ SOFTWARE.
 
 #include "include/Parser.hpp"
 
-#include <bits/fs_dir.h>
-
 #include <algorithm>
 #include <execution>
 #include <filesystem>
@@ -61,6 +59,14 @@ inline std::optional<std::size_t> FindCommentPosition(
       return line.find("#");
       break;
   }
+
+  /*
+   * Only possible if new file type is added to the parser class but forgotten
+   * to be checked in the above switch. This will allow our linter to warn of
+   * non-exhaustive checks will appeasing the compiler of having a return on all
+   * control paths without having a default case!
+   */
+  return std::nullopt;
 }
 }  // namespace
 
