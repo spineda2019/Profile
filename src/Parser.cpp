@@ -246,10 +246,15 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
   for (const auto& [_, keyword_count, keyword_literal] : this->keyword_pairs_) {
     std::cout << keyword_literal << "s Found: " << keyword_count << std::endl;
   }  // TODO(not_a_real_todo) test
-  for (const auto& [_, literal, count] : this->custom_regexes_.value_or(
-           std::vector<
-               std::tuple<std::regex, std::string_view, std::size_t>>{})) {
-    std::cout << literal << "s Found: " << count << std::endl;
+  if (custom_regexes_.has_value()) {
+    std::cout
+        << std::endl
+        << "------------------------------------ Customs ------------------"
+           "-----------------"
+        << std::endl;
+    for (const auto& [_, literal, count] : this->custom_regexes_.value()) {
+      std::cout << "Amount of " << literal << " Found: " << count << std::endl;
+    }
   }
   this->ReportSummary();
   std::cout << std::endl;
