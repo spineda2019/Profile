@@ -100,8 +100,8 @@ const std::optional<CommentFormat> Parser::IsValidFile(
   std::filesystem::path extension(file.extension());
   for (const auto& [file_extension, classification] : Parser::COMMENT_FORMATS) {
     if (extension == file_extension) {
-      this->file_type_frequencies_.try_emplace(file_extension, 0);
-      this->file_type_frequencies_[file_extension]++;
+      file_type_frequencies_.try_emplace(file_extension, 0);
+      file_type_frequencies_[file_extension]++;
       return classification;
     }
   }
@@ -158,7 +158,7 @@ void Parser::RecursivelyParseFiles(
   std::optional<std::size_t> comment_position{};
   std::size_t position{};
   std::string::iterator start{};
-  this->file_count_++;
+  file_count_++;
 
   while (std::getline(file_stream, line)) {
     line_count++;
@@ -174,12 +174,12 @@ void Parser::RecursivelyParseFiles(
 
     start = line.begin() + comment_position.value();
     std::string sub_str(start, line.end());
-    if (this->verbose_printing_) {
+    if (verbose_printing_) {
       for (auto& [keyword_regex, keyword_count, keyword_literal] :
-           this->keyword_pairs_) {
+           keyword_pairs_) {
         if (std::regex_search(sub_str, keyword_regex)) {
           {
-            std::lock_guard lock(this->print_lock_);
+            std::lock_guard lock(print_lock_);
             std::cout << keyword_literal << " Found:" << std::endl
                       << "File: " << current_file << std::endl
                       << "Line Number: " << line_count << std::endl
@@ -194,7 +194,7 @@ void Parser::RecursivelyParseFiles(
         for (auto& [regex, literal, count] : custom_regexes_.value()) {
           if (std::regex_search(sub_str, regex)) {
             {
-              std::lock_guard lock(this->print_lock_);
+              std::lock_guard lock(print_lock_);
               std::cout << "Regex " << literal << " Found:" << std::endl
                         << "File: " << current_file << std::endl
                         << "Line Number: " << line_count << std::endl
@@ -206,7 +206,7 @@ void Parser::RecursivelyParseFiles(
         }
       }
     } else {
-      for (auto& [keyword_regex, keyword_count, _] : this->keyword_pairs_) {
+      for (auto& [keyword_regex, keyword_count, _] : keyword_pairs_) {
         if (std::regex_search(sub_str, keyword_regex)) {
           keyword_count++;
         }
@@ -233,7 +233,7 @@ void Parser::ReportSummary() const {
   std::cout << "---------------------------------------------------------------"
                "-----------------"
             << std::endl;
-  for (const auto& [file_extension, frequency] : this->file_type_frequencies_) {
+  for (const auto& [file_extension, frequency] : file_type_frequencies_) {
     std::cout << std::left << std::setw(19) << file_extension << "|"
               << std::setw(20) << frequency << std::endl;
     std::cout
@@ -246,8 +246,8 @@ void Parser::ReportSummary() const {
 void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
   this->RecursivelyParseFiles(current_file);
 
-  std::cout << "Files Profiled: " << this->file_count_ << std::endl;
-  for (const auto& [_, keyword_count, keyword_literal] : this->keyword_pairs_) {
+  std::cout << "Files Profiled: " << file_count_ << std::endl;
+  for (const auto& [_, keyword_count, keyword_literal] : keyword_pairs_) {
     std::cout << keyword_literal << "s Found: " << keyword_count << std::endl;
   }  // TODO(not_a_real_todo) test
   if (custom_regexes_.has_value()) {
@@ -256,7 +256,7 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
         << "------------------------------------ Customs ------------------"
            "-----------------"
         << std::endl;
-    for (const auto& [_, literal, count] : this->custom_regexes_.value()) {
+    for (const auto& [_, literal, count] : custom_regexes_.value()) {
       std::cout << "Amount of " << literal << " Found: " << count << std::endl;
     }
   }
