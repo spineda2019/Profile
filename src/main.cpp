@@ -30,7 +30,7 @@ SOFTWARE.
 #include "include/Parser.hpp"
 #include "include/directory_validator.hpp"
 
-bool NoEmptyRegexes(const std::span<std::string> regexes) {
+constexpr bool NoEmptyRegexes(const std::span<std::string> regexes) {
   for (const std::string_view regex : regexes) {
     if (regex.size() == 0) {
       return false;
