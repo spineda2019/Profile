@@ -32,6 +32,7 @@ SOFTWARE.
 #include <string_view>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace parser_info {
 
@@ -43,6 +44,8 @@ enum class CommentFormat : std::uint8_t {
 class Parser {
  public:
   explicit Parser(const bool&& verbose_printing);
+  explicit Parser(const bool&& verbose_printing,
+                  const std::vector<std::string>&& custom_regexes);
   ~Parser() = default;
 
   void ParseFiles(const std::filesystem::path& current_file) noexcept;
@@ -60,6 +63,10 @@ class Parser {
   std::unordered_map<std::string_view, std::size_t> file_type_frequencies_;
   std::array<std::tuple<std::regex, std::size_t, std::string_view>, 4>
       keyword_pairs_;
+
+  std::optional<
+      std::vector<std::tuple<std::regex, std::string_view, std::size_t>>>
+      custom_regexes_;
 
   std::mutex print_lock_;
   std::mutex markdown_lock_;
