@@ -32,6 +32,11 @@ program!
 | FIXME   |
 | BUG     |
 
+These special comments will always be caught and reported to you. You may also
+pass custom regexes to Profile and these will <em>also</em> be searched for in
+file comments and reported like anything else. Examples on how to do so are
+below.
+
 ## Examples
 A sample output could look like the following:
 
@@ -106,6 +111,48 @@ For other flags, see the help message:
 
 ```zsh
 Profile -h
+```
+
+## Custom Search Regexes
+By using the <code>-c</code> or <code>--custom</code> flag, you can specify
+custom desired regexes to search for in file comments! Here is what it may look
+like:
+
+
+```txt
+Profile -l -c foo
+
+TODO Found:
+File: "foo/bar.cpp"
+Line Number: 144
+Line:   std::size_t length_; // TODO: Change Type
+
+Regex foo Found:
+File: "foo/bar.cpp"
+Line Number: 145
+Line:   std::size_t width; // Here's a foo!
+
+Files Profiled: 1212
+TODOs Found: 1
+FIXMEs Found: 0
+BUGs Found: 0
+HACKs Found: 0
+
+------------------------------------ Customs -----------------------------------
+Amount of foo Found: 1
+
+File Extension     |Files               
+--------------------------------------------------------------------------------
+.hpp               |2                   
+--------------------------------------------------------------------------------
+.cpp               |3                   
+--------------------------------------------------------------------------------
+```
+
+you can even pass in as many regexes as you please. Just reuse the same flag:
+
+```txt
+Profile -l -c foo -c bar
 ```
 
 ## Compiling From Source
