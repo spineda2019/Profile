@@ -23,9 +23,21 @@ SOFTWARE.
 #include <argparse/argparse.hpp>
 #include <filesystem>
 #include <iostream>
+#include <span>
+#include <string_view>
+#include <vector>
 
 #include "include/Parser.hpp"
 #include "include/directory_validator.hpp"
+
+bool NoEmptyRegexes(const std::span<std::string> regexes) {
+  for (const std::string_view regex : regexes) {
+    if (regex.size() == 0) {
+      return false;
+    }
+  }
+  return true;
+}
 
 constexpr const char* version{"0.0.5"};
 
@@ -35,6 +47,11 @@ int main(int argc, char** argv) {
 
   argument_parser.add_argument("--directory", "-d")
       .help("Directory to Profile");
+
+  argument_parser.add_argument("-c", "--custom")
+      .default_value(std::vector<std::string>{})
+      .append()
+      .help("Custom Regexes");
 
   argument_parser.add_argument("--log", "-l")
       .help("Log Found Comment to Stdout")
@@ -84,9 +101,16 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  parser_info::Parser parser{argument_parser.get<bool>("-l")};
-
-  parser.ParseFiles(directory);
+  if (std::vector<std::string> regexes{
+          argument_parser.get<std::vector<std::string>>("-c")};
+      regexes.size() != 0 && NoEmptyRegexes(regexes)) {
+    parser_info::Parser parser{argument_parser.get<bool>("-l"),
+                               std::move(regexes)};
+    parser.ParseFiles(directory);
+  } else {
+    parser_info::Parser parser{argument_parser.get<bool>("-l")};
+    parser.ParseFiles(directory);
+  }
 
   return 0;
 }
