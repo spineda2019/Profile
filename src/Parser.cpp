@@ -224,6 +224,10 @@ void Parser::RecursivelyParseFiles(
 
 void Parser::ReportSummary() const {
   std::cout << std::endl
+            << "------------------------------------ Summary ------------------"
+               "-----------------"
+            << std::endl;
+  std::cout << std::endl
             << std::left << std::setw(19) << "File Extension" << std::left
             << "|" << std::left << std::setw(20) << "Files" << std::endl;
   std::cout << "---------------------------------------------------------------"
