@@ -23,6 +23,7 @@ SOFTWARE.
 #include "include/Parser.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <execution>
 #include <filesystem>
 #include <fstream>
@@ -34,18 +35,42 @@ SOFTWARE.
 #include <regex>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace parser_info {
 Parser::Parser(const bool&& verbose_printing)
     : verbose_printing_(verbose_printing),
       file_type_frequencies_{},
       file_count_(0),
+      custom_regexes_{std::nullopt},
       keyword_pairs_{{
           {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
           {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
           {std::regex("\\bBUG(\\(\\w*\\))?"), 0, "BUG"},
           {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
       }} {}
+
+Parser::Parser(const bool&& verbose_printing,
+               const std::vector<std::string>&& custom_regexes)
+    : verbose_printing_(verbose_printing),
+      file_type_frequencies_{},
+      file_count_(0),
+      custom_regexes_{std::make_optional(
+          std::vector<
+              std::tuple<std::regex, std::string_view, std::size_t>>{})},
+      keyword_pairs_{{
+          {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
+          {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
+          {std::regex("\\bBUG(\\(\\w*\\))?"), 0, "BUG"},
+          {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
+      }} {
+  custom_regexes_->reserve(custom_regexes.size());
+  for (const std::string& regex : custom_regexes) {
+    custom_regexes_->emplace_back(
+        std::make_tuple<std::regex, std::string_view, std::size_t>(
+            std::regex{regex}, std::string_view{regex}, 0));
+  }
+}
 
 namespace {
 inline std::optional<std::size_t> FindCommentPosition(
@@ -152,7 +177,7 @@ void Parser::RecursivelyParseFiles(
     if (this->verbose_printing_) {
       for (auto& [keyword_regex, keyword_count, keyword_literal] :
            this->keyword_pairs_) {
-        if (std::regex_search(std::move(sub_str), keyword_regex)) {
+        if (std::regex_search(sub_str, keyword_regex)) {
           {
             std::lock_guard lock(this->print_lock_);
             std::cout << keyword_literal << " Found:" << std::endl
@@ -164,10 +189,33 @@ void Parser::RecursivelyParseFiles(
           keyword_count++;
         }
       }
+
+      if (custom_regexes_.has_value()) {
+        for (auto& [regex, literal, count] : custom_regexes_.value()) {
+          if (std::regex_search(sub_str, regex)) {
+            {
+              std::lock_guard lock(this->print_lock_);
+              std::cout << "Regex " << literal << " Found:" << std::endl
+                        << "File: " << current_file << std::endl
+                        << "Line Number: " << line_count << std::endl
+                        << "Line: " << line << std::endl
+                        << std::endl;
+            }
+            count++;
+          }
+        }
+      }
     } else {
       for (auto& [keyword_regex, keyword_count, _] : this->keyword_pairs_) {
-        if (std::regex_search(std::move(sub_str), keyword_regex)) {
+        if (std::regex_search(sub_str, keyword_regex)) {
           keyword_count++;
+        }
+        if (custom_regexes_.has_value()) {
+          for (auto& [regex, literal, count] : custom_regexes_.value()) {
+            if (std::regex_search(sub_str, regex)) {
+              count++;
+            }
+          }
         }
       }
     }
@@ -198,6 +246,11 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
   for (const auto& [_, keyword_count, keyword_literal] : this->keyword_pairs_) {
     std::cout << keyword_literal << "s Found: " << keyword_count << std::endl;
   }  // TODO(not_a_real_todo) test
+  for (const auto& [_, literal, count] : this->custom_regexes_.value_or(
+           std::vector<
+               std::tuple<std::regex, std::string_view, std::size_t>>{})) {
+    std::cout << literal << "s Found: " << count << std::endl;
+  }
   this->ReportSummary();
   std::cout << std::endl;
 }
