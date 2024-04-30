@@ -174,48 +174,33 @@ void Parser::RecursivelyParseFiles(
 
     start = line.begin() + comment_position.value();
     std::string sub_str(start, line.end());
-    if (verbose_printing_) {
-      for (auto& [keyword_regex, keyword_count, keyword_literal] :
-           keyword_pairs_) {
-        if (std::regex_search(sub_str, keyword_regex)) {
-          {
+    for (auto& [keyword_regex, keyword_count, keyword_literal] :
+         keyword_pairs_) {
+      if (std::regex_search(sub_str, keyword_regex)) {
+        if (verbose_printing_) {
+          std::lock_guard lock(print_lock_);
+          std::cout << keyword_literal << " Found:" << std::endl
+                    << "File: " << current_file << std::endl
+                    << "Line Number: " << line_count << std::endl
+                    << "Line: " << line << std::endl
+                    << std::endl;
+        }
+        keyword_count++;
+      }
+    }
+
+    if (custom_regexes_.has_value()) {
+      for (auto& [regex, literal, count] : custom_regexes_.value()) {
+        if (std::regex_search(sub_str, regex)) {
+          if (verbose_printing_) {
             std::lock_guard lock(print_lock_);
-            std::cout << keyword_literal << " Found:" << std::endl
+            std::cout << "Regex " << literal << " Found:" << std::endl
                       << "File: " << current_file << std::endl
                       << "Line Number: " << line_count << std::endl
                       << "Line: " << line << std::endl
                       << std::endl;
           }
-          keyword_count++;
-        }
-      }
-
-      if (custom_regexes_.has_value()) {
-        for (auto& [regex, literal, count] : custom_regexes_.value()) {
-          if (std::regex_search(sub_str, regex)) {
-            {
-              std::lock_guard lock(print_lock_);
-              std::cout << "Regex " << literal << " Found:" << std::endl
-                        << "File: " << current_file << std::endl
-                        << "Line Number: " << line_count << std::endl
-                        << "Line: " << line << std::endl
-                        << std::endl;
-            }
-            count++;
-          }
-        }
-      }
-    } else {
-      for (auto& [keyword_regex, keyword_count, _] : keyword_pairs_) {
-        if (std::regex_search(sub_str, keyword_regex)) {
-          keyword_count++;
-        }
-        if (custom_regexes_.has_value()) {
-          for (auto& [regex, literal, count] : custom_regexes_.value()) {
-            if (std::regex_search(sub_str, regex)) {
-              count++;
-            }
-          }
+          count++;
         }
       }
     }
