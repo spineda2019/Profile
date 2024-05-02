@@ -39,8 +39,9 @@ SOFTWARE.
 #include <vector>
 
 template <>
-inline constexpr bool std::ranges::enable_borrowed_range<
-    std::filesystem::recursive_directory_iterator> = true;
+inline constexpr bool
+    std::ranges::enable_view<std::filesystem::recursive_directory_iterator> =
+        true;
 
 namespace parser_info {
 Parser::Parser(const bool&& verbose_printing)
