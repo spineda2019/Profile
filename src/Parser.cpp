@@ -32,10 +32,15 @@ SOFTWARE.
 #include <iostream>
 #include <mutex>
 #include <optional>
+#include <ranges>
 #include <regex>
 #include <string>
 #include <string_view>
 #include <vector>
+
+template <>
+inline constexpr bool std::ranges::enable_borrowed_range<
+    std::filesystem::recursive_directory_iterator> = true;
 
 namespace parser_info {
 Parser::Parser(const bool&& verbose_printing)
@@ -111,40 +116,10 @@ const std::optional<CommentFormat> Parser::IsValidFile(
 
 void Parser::RecursivelyParseFiles(
     const std::filesystem::path& current_file) noexcept {
-  if (std::filesystem::is_symlink(current_file)) {
+  if (std::filesystem::is_symlink(current_file) ||
+      std::filesystem::is_directory(current_file)) {
     return;
   }
-
-#ifdef _WIN32
-  // HACK: The second msvc supports the below paradigm, scrap this!
-
-  if (std::filesystem::is_directory(current_file)) {
-    std::vector<std::filesystem::path> directories{};
-    for (const auto& entry :
-         std::filesystem::directory_iterator(current_file)) {
-      if (std::filesystem::is_directory(entry)) {
-        directories.emplace_back(std::move(entry));
-      } else {
-        this->RecursivelyParseFiles(entry);
-      }
-    }
-    std::for_each(std::execution::par_unseq, directories.begin(),
-                  directories.end(),
-                  [this](const std::filesystem::path& directory) {
-                    this->RecursivelyParseFiles(directory);
-                  });
-  }
-#else
-  if (std::filesystem::is_directory(current_file)) {
-    std::filesystem::directory_iterator directory_iterator(current_file);
-    std::for_each(std::execution::par_unseq,
-                  std::filesystem::begin(directory_iterator),
-                  std::filesystem::end(directory_iterator),
-                  [this](const std::filesystem::path& entry) {
-                    this->RecursivelyParseFiles(entry);
-                  });
-  }
-#endif
 
   std::optional<CommentFormat> comment_format{this->IsValidFile(current_file)};
 
@@ -229,6 +204,37 @@ void Parser::ReportSummary() const {
 }
 
 void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
+#ifdef _WIN32
+  // HACK: The second msvc supports the below paradigm, scrap this!
+  // FIXME: Broken on Windows now...
+
+  std::filesystem::recursive_directory_iterator directory_iterator(
+      current_file);
+
+  std::vector<std::filesystem::path> directories{};
+  for (const auto& entry : directory_iterator) {
+    if (std::filesystem::is_directory(entry)) {
+      directories.emplace_back(std::move(entry));
+    } else {
+      this->RecursivelyParseFiles(entry);
+    }
+  }
+  std::for_each(std::execution::par_unseq, directories.begin(),
+                directories.end(),
+                [this](const std::filesystem::path& directory) {
+                  this->RecursivelyParseFiles(directory);
+                });
+#else
+
+  std::filesystem::recursive_directory_iterator directory_iterator(
+      current_file);
+  std::ranges::for_each(directory_iterator,
+                        [this](const std::filesystem::path& entry) {
+                          this->RecursivelyParseFiles(entry);
+                        });
+
+#endif
+
   this->RecursivelyParseFiles(current_file);
 
   std::cout << "Files Profiled: " << file_count_ << std::endl;
