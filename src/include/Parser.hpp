@@ -60,16 +60,15 @@ class Parser {
       const std::filesystem::path& current_file) noexcept;
 
  private:
-  std::unordered_map<std::string_view, std::size_t> file_type_frequencies_;
   std::array<std::tuple<std::regex, std::size_t, std::string_view>, 4>
       keyword_pairs_;
+  std::mutex print_lock_;
+  std::mutex markdown_lock_;
+  std::unordered_map<std::string_view, std::size_t> file_type_frequencies_;
 
   std::optional<
       std::vector<std::tuple<std::regex, std::string_view, std::size_t>>>
       custom_regexes_;
-
-  std::mutex print_lock_;
-  std::mutex markdown_lock_;
 
   std::size_t file_count_;
 
