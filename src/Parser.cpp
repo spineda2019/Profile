@@ -37,6 +37,7 @@ SOFTWARE.
 #include <string>
 #include <string_view>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 namespace parser_info {
@@ -45,7 +46,6 @@ Parser::Parser(const bool&& verbose_printing)
       file_type_frequencies_{},
       file_count_(0),
       custom_regexes_{std::nullopt},
-      thread_pool_{},
       thread_pool_capacity_{std::thread::hardware_concurrency()},
       active_threads_{0},
       keyword_pairs_{{
@@ -63,7 +63,6 @@ Parser::Parser(const bool&& verbose_printing,
       custom_regexes_{std::make_optional(
           std::vector<
               std::tuple<std::regex, std::string_view, std::size_t>>{})},
-      thread_pool_{},
       thread_pool_capacity_{std::thread::hardware_concurrency()},
       active_threads_{0},
       keyword_pairs_{{
@@ -215,17 +214,23 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
   std::cout << "Concurrent Threads Supported: " << thread_pool_capacity_
             << std::endl
             << std::endl;
-  thread_pool_.reserve(thread_pool_capacity_);
   std::filesystem::recursive_directory_iterator directory_iterator(
       current_file);
+
+  std::vector<std::jthread> pool{};
+  pool.reserve(thread_pool_capacity_);
+
   std::ranges::for_each(
-      directory_iterator, [this](const std::filesystem::path& entry) {
+      directory_iterator, [this, &pool](const std::filesystem::path& entry) {
         while (active_threads_.load() >= thread_pool_capacity_) {
         }
         active_threads_.fetch_add(1);
-        thread_pool_.emplace_back(&Parser::RecursivelyParseFiles, this,
-                                  std::ref(entry));
+        pool.emplace_back(&Parser::RecursivelyParseFiles, this,
+                          std::ref(entry));
       });
+
+  while (active_threads_ > 0) {
+  }
 
   std::cout << "Files Profiled: " << file_count_ << std::endl;
   for (const auto& [_, keyword_count, keyword_literal] : keyword_pairs_) {

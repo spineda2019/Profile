@@ -32,7 +32,6 @@ SOFTWARE.
 #include <optional>
 #include <regex>
 #include <string_view>
-#include <thread>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -68,7 +67,6 @@ class Parser {
   std::mutex print_lock_;
   std::mutex markdown_lock_;
   std::unordered_map<std::string_view, std::size_t> file_type_frequencies_;
-  std::vector<std::jthread> thread_pool_;
   std::optional<
       std::vector<std::tuple<std::regex, std::string_view, std::size_t>>>
       custom_regexes_;
