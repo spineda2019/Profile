@@ -46,6 +46,7 @@ Parser::Parser(const bool&& verbose_printing)
       custom_regexes_{std::nullopt},
       thread_pool_{},
       thread_pool_capacity_{std::thread::hardware_concurrency()},
+      active_threads_{0},
       keyword_pairs_{{
           {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
           {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
@@ -63,6 +64,7 @@ Parser::Parser(const bool&& verbose_printing,
               std::tuple<std::regex, std::string_view, std::size_t>>{})},
       thread_pool_{},
       thread_pool_capacity_{std::thread::hardware_concurrency()},
+      active_threads_{0},
       keyword_pairs_{{
           {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
           {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},

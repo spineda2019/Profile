@@ -24,6 +24,7 @@ SOFTWARE.
 #define INCLUDE_PARSER_HPP_
 
 #include <array>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -73,6 +74,7 @@ class Parser {
       custom_regexes_;
   std::size_t file_count_;
   std::uint32_t thread_pool_capacity_;
+  std::atomic<std::uint16_t> active_threads_;
   bool verbose_printing_;
 
   static constexpr std::array<std::pair<std::string_view, CommentFormat>, 10>
