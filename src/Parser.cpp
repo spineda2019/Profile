@@ -26,6 +26,7 @@ SOFTWARE.
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <iomanip>
 #include <ios>
 #include <iostream>
@@ -120,12 +121,14 @@ void Parser::RecursivelyParseFiles(
     const std::filesystem::path& current_file) noexcept {
   if (std::filesystem::is_symlink(current_file) ||
       std::filesystem::is_directory(current_file)) {
+    active_threads_.fetch_add(-1);
     return;
   }
 
   std::optional<CommentFormat> comment_format{this->IsValidFile(current_file)};
 
   if (!comment_format.has_value()) {
+    active_threads_.fetch_add(-1);
     return;
   }
 
@@ -144,6 +147,7 @@ void Parser::RecursivelyParseFiles(
         FindCommentPosition(comment_format.value(), line, current_file);
 
     if (!comment_position.has_value()) {
+      active_threads_.fetch_add(-1);
       return;
     } else if (comment_position.value() == std::string::npos) {
       continue;
@@ -182,6 +186,8 @@ void Parser::RecursivelyParseFiles(
       }
     }
   }
+
+  active_threads_.fetch_add(-1);
 }
 
 void Parser::ReportSummary() const {
@@ -212,10 +218,14 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
   thread_pool_.reserve(thread_pool_capacity_);
   std::filesystem::recursive_directory_iterator directory_iterator(
       current_file);
-  std::ranges::for_each(directory_iterator,
-                        [this](const std::filesystem::path& entry) {
-                          this->RecursivelyParseFiles(entry);
-                        });
+  std::ranges::for_each(
+      directory_iterator, [this](const std::filesystem::path& entry) {
+        while (active_threads_.load() >= thread_pool_capacity_) {
+        }
+        active_threads_.fetch_add(1);
+        thread_pool_.emplace_back(&Parser::RecursivelyParseFiles, this,
+                                  std::ref(entry));
+      });
 
   std::cout << "Files Profiled: " << file_count_ << std::endl;
   for (const auto& [_, keyword_count, keyword_literal] : keyword_pairs_) {
