@@ -31,9 +31,11 @@ SOFTWARE.
 #include <iostream>
 #include <mutex>
 #include <optional>
+#include <ostream>
 #include <regex>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 namespace parser_info {
@@ -42,6 +44,8 @@ Parser::Parser(const bool&& verbose_printing)
       file_type_frequencies_{},
       file_count_(0),
       custom_regexes_{std::nullopt},
+      thread_pool_{},
+      thread_pool_capacity_{std::thread::hardware_concurrency()},
       keyword_pairs_{{
           {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
           {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
@@ -57,6 +61,8 @@ Parser::Parser(const bool&& verbose_printing,
       custom_regexes_{std::make_optional(
           std::vector<
               std::tuple<std::regex, std::string_view, std::size_t>>{})},
+      thread_pool_{},
+      thread_pool_capacity_{std::thread::hardware_concurrency()},
       keyword_pairs_{{
           {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
           {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
@@ -198,6 +204,10 @@ void Parser::ReportSummary() const {
 }
 
 void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
+  std::cout << "Concurrent Threads Supported: " << thread_pool_capacity_
+            << std::endl
+            << std::endl;
+  thread_pool_.reserve(thread_pool_capacity_);
   std::filesystem::recursive_directory_iterator directory_iterator(
       current_file);
   std::ranges::for_each(directory_iterator,

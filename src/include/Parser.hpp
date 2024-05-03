@@ -25,11 +25,13 @@ SOFTWARE.
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <mutex>
 #include <optional>
 #include <regex>
 #include <string_view>
+#include <thread>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -65,13 +67,12 @@ class Parser {
   std::mutex print_lock_;
   std::mutex markdown_lock_;
   std::unordered_map<std::string_view, std::size_t> file_type_frequencies_;
-
+  std::vector<std::jthread> thread_pool_;
   std::optional<
       std::vector<std::tuple<std::regex, std::string_view, std::size_t>>>
       custom_regexes_;
-
   std::size_t file_count_;
-
+  std::uint32_t thread_pool_capacity_;
   bool verbose_printing_;
 
   static constexpr std::array<std::pair<std::string_view, CommentFormat>, 10>
