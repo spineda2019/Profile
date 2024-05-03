@@ -39,7 +39,7 @@ constexpr bool NoEmptyRegexes(const std::span<std::string> regexes) {
   return true;
 }
 
-constexpr const char* version{"0.1.1"};
+constexpr const char* version{"0.1.2"};
 
 int main(int argc, char** argv) {
   argparse::ArgumentParser argument_parser("Profile", version,
