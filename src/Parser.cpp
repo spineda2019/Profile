@@ -26,7 +26,6 @@ SOFTWARE.
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
-#include <functional>
 #include <iomanip>
 #include <ios>
 #include <iostream>
@@ -49,12 +48,17 @@ Parser::Parser(const bool&& verbose_printing)
       thread_pool_capacity_{std::thread::hardware_concurrency() /
                             std::thread::hardware_concurrency()},
       active_threads_{0},
+      jobs_{},
+      thread_pool_{},
+      terminate_jobs_{false},
       keyword_pairs_{{
           {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
           {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
           {std::regex("\\bBUG(\\(\\w*\\))?"), 0, "BUG"},
           {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
-      }} {}
+      }} {
+  thread_pool_.reserve(thread_pool_capacity_);
+}
 
 Parser::Parser(const bool&& verbose_printing,
                const std::vector<std::string>&& custom_regexes)
@@ -67,12 +71,16 @@ Parser::Parser(const bool&& verbose_printing,
       thread_pool_capacity_{std::thread::hardware_concurrency() /
                             std::thread::hardware_concurrency()},
       active_threads_{0},
+      jobs_{},
+      thread_pool_{},
+      terminate_jobs_{false},
       keyword_pairs_{{
           {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
           {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
           {std::regex("\\bBUG(\\(\\w*\\))?"), 0, "BUG"},
           {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
       }} {
+  thread_pool_.reserve(thread_pool_capacity_);
   custom_regexes_->reserve(custom_regexes.size());
   for (const std::string& regex : custom_regexes) {
     custom_regexes_->emplace_back(
@@ -219,21 +227,11 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
   std::filesystem::recursive_directory_iterator directory_iterator(
       current_file);
 
-  std::vector<std::jthread> pool{};
-  pool.reserve(thread_pool_capacity_);
-
   std::ranges::for_each(directory_iterator,
-                        [this, &pool](const std::filesystem::path& entry) {
-                          if (pool.size() >= thread_pool_capacity_) {
-                            pool.clear();
-                          }
-
+                        [this](const std::filesystem::path& entry) {
                           active_threads_.fetch_add(1);
-                          pool.emplace_back(&Parser::RecursivelyParseFiles,
-                                            this, std::ref(entry));
+                          this->RecursivelyParseFiles(entry);
                         });
-
-  pool.clear();
 
   std::cout << "Files Profiled: " << file_count_ << std::endl;
   for (const auto& [_, keyword_count, keyword_literal] : keyword_pairs_) {

@@ -28,10 +28,13 @@ SOFTWARE.
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <mutex>
 #include <optional>
+#include <queue>
 #include <regex>
 #include <string_view>
+#include <thread>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -64,15 +67,17 @@ class Parser {
  private:
   std::array<std::tuple<std::regex, std::size_t, std::string_view>, 4>
       keyword_pairs_;
+  std::queue<std::function<void(const std::filesystem::path&)>> jobs_;
   std::mutex print_lock_;
-  std::mutex markdown_lock_;
   std::unordered_map<std::string_view, std::size_t> file_type_frequencies_;
   std::optional<
       std::vector<std::tuple<std::regex, std::string_view, std::size_t>>>
       custom_regexes_;
+  std::vector<std::jthread> thread_pool_;
   std::size_t file_count_;
   std::uint32_t thread_pool_capacity_;
   std::atomic<std::uint16_t> active_threads_;
+  std::atomic<bool> terminate_jobs_;
   bool verbose_printing_;
 
   static constexpr std::array<std::pair<std::string_view, CommentFormat>, 10>
