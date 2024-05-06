@@ -67,7 +67,8 @@ class Parser {
   void ThreadWaitingRoom();
 
  private:
-  std::array<std::tuple<std::regex, std::size_t, std::string_view>, 4>
+  std::array<std::tuple<std::regex, std::atomic<std::size_t>, std::string_view>,
+             4>
       keyword_pairs_;
   std::queue<
       std::pair<std::filesystem::path,
@@ -83,9 +84,9 @@ class Parser {
       std::vector<std::tuple<std::regex, std::string_view, std::size_t>>>
       custom_regexes_;
   std::vector<std::jthread> thread_pool_;
-  std::size_t file_count_;
+  std::atomic<std::size_t> file_count_;
   std::atomic<bool> terminate_jobs_;
-  bool verbose_printing_;
+  const bool verbose_printing_;
 
   static constexpr std::array<std::pair<std::string_view, CommentFormat>, 10>
       COMMENT_FORMATS{{

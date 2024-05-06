@@ -38,6 +38,7 @@ SOFTWARE.
 #include <string>
 #include <string_view>
 #include <thread>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -67,8 +68,8 @@ Parser::Parser(const bool&& verbose_printing,
       file_type_frequencies_{},
       file_count_(0),
       custom_regexes_{std::make_optional(
-          std::vector<
-              std::tuple<std::regex, std::string_view, std::size_t>>{})},
+          std::vector<std::tuple<std::regex, std::string_view, std::size_t>>{
+              custom_regexes.size()})},
       jobs_{},
       thread_pool_{},
       terminate_jobs_{false},
@@ -81,7 +82,6 @@ Parser::Parser(const bool&& verbose_printing,
           {std::regex("\\bBUG(\\(\\w*\\))?"), 0, "BUG"},
           {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
       }} {
-  custom_regexes_->reserve(custom_regexes.size());
   for (const std::string& regex : custom_regexes) {
     custom_regexes_->emplace_back(
         std::make_tuple<std::regex, std::string_view, std::size_t>(
@@ -144,8 +144,9 @@ const std::optional<CommentFormat> Parser::IsValidFile(
       {
         std::unique_lock<std::mutex> lock{data_lock_};
         file_type_frequencies_.try_emplace(file_extension, 0);
-        file_type_frequencies_[file_extension].fetch_add(1);
       }
+
+      file_type_frequencies_[file_extension].fetch_add(1);
       return classification;
     }
   }
@@ -171,10 +172,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   std::optional<std::size_t> comment_position{};
   std::size_t position{};
   std::string::iterator start{};
-  {
-    std::unique_lock<std::mutex> lock{data_lock_};
-    file_count_++;
-  }
+  file_count_.fetch_add(1);
 
   while (std::getline(file_stream, line)) {
     line_count++;
@@ -201,8 +199,8 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
                     << "Line: " << line << std::endl
                     << std::endl;
         }
-        std::unique_lock<std::mutex> lock{data_lock_};
-        keyword_count++;
+
+        keyword_count.fetch_add(1);
       }
     }
 
@@ -217,8 +215,11 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
                       << "Line: " << line << std::endl
                       << std::endl;
           }
-          std::unique_lock<std::mutex> lock{data_lock_};
-          count++;
+
+          {
+            std::unique_lock<std::mutex> lock{data_lock_};
+            count++;
+          }
         }
       }
     }
@@ -276,7 +277,7 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
   job_condition_.notify_all();
   thread_pool_.clear();
 
-  std::cout << "Files Profiled: " << file_count_ << std::endl;
+  std::cout << "Files Profiled: " << file_count_.load() << std::endl;
   for (const auto& [_, keyword_count, keyword_literal] : keyword_pairs_) {
     std::cout << keyword_literal << "s Found: " << keyword_count << std::endl;
   }  // TODO(not_a_real_todo) test
