@@ -24,8 +24,10 @@ SOFTWARE.
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <iomanip>
 #include <ios>
 #include <iostream>
@@ -37,6 +39,7 @@ SOFTWARE.
 #include <string_view>
 #include <thread>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace parser_info {
@@ -45,20 +48,17 @@ Parser::Parser(const bool&& verbose_printing)
       file_type_frequencies_{},
       file_count_(0),
       custom_regexes_{std::nullopt},
-      thread_pool_capacity_{std::thread::hardware_concurrency() /
-                            std::thread::hardware_concurrency()},
-      active_threads_{0},
       jobs_{},
       thread_pool_{},
       terminate_jobs_{false},
+      job_lock_{},
+      job_condition_{},
       keyword_pairs_{{
           {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
           {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
           {std::regex("\\bBUG(\\(\\w*\\))?"), 0, "BUG"},
           {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
-      }} {
-  thread_pool_.reserve(thread_pool_capacity_);
-}
+      }} {}
 
 Parser::Parser(const bool&& verbose_printing,
                const std::vector<std::string>&& custom_regexes)
@@ -68,19 +68,17 @@ Parser::Parser(const bool&& verbose_printing,
       custom_regexes_{std::make_optional(
           std::vector<
               std::tuple<std::regex, std::string_view, std::size_t>>{})},
-      thread_pool_capacity_{std::thread::hardware_concurrency() /
-                            std::thread::hardware_concurrency()},
-      active_threads_{0},
       jobs_{},
       thread_pool_{},
       terminate_jobs_{false},
+      job_lock_{},
+      job_condition_{},
       keyword_pairs_{{
           {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
           {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
           {std::regex("\\bBUG(\\(\\w*\\))?"), 0, "BUG"},
           {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
       }} {
-  thread_pool_.reserve(thread_pool_capacity_);
   custom_regexes_->reserve(custom_regexes.size());
   for (const std::string& regex : custom_regexes) {
     custom_regexes_->emplace_back(
@@ -112,7 +110,29 @@ inline std::optional<std::size_t> FindCommentPosition(
 }
 }  // namespace
 
-void Parser::ThreadWaitingRoom() {}
+void Parser::ThreadWaitingRoom() {
+  while (true) {
+    std::function<void(Parser&, const std::filesystem::path&)> job{};
+    std::filesystem::path entry{};
+
+    {
+      std::unique_lock<std::mutex> lock{job_lock_};
+      job_condition_.wait(
+          lock, [this] { return !(jobs_.empty()) || terminate_jobs_.load(); });
+
+      if (terminate_jobs_.load()) {
+        return;
+      }
+
+      entry = jobs_.front().first;
+      job = jobs_.front().second;
+
+      jobs_.pop();
+    }
+
+    job(*this, entry);
+  }
+}
 
 const std::optional<CommentFormat> Parser::IsValidFile(
     const std::filesystem::path& file) {
@@ -128,18 +148,15 @@ const std::optional<CommentFormat> Parser::IsValidFile(
   return std::nullopt;
 }
 
-void Parser::RecursivelyParseFiles(
-    const std::filesystem::path& current_file) noexcept {
+void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   if (std::filesystem::is_symlink(current_file) ||
       std::filesystem::is_directory(current_file)) {
-    active_threads_.fetch_add(-1);
     return;
   }
 
   std::optional<CommentFormat> comment_format{this->IsValidFile(current_file)};
 
   if (!comment_format.has_value()) {
-    active_threads_.fetch_add(-1);
     return;
   }
 
@@ -149,7 +166,7 @@ void Parser::RecursivelyParseFiles(
   std::optional<std::size_t> comment_position{};
   std::size_t position{};
   std::string::iterator start{};
-  file_count_++;
+  file_count_.fetch_add(1);
 
   while (std::getline(file_stream, line)) {
     line_count++;
@@ -158,7 +175,6 @@ void Parser::RecursivelyParseFiles(
         FindCommentPosition(comment_format.value(), line, current_file);
 
     if (!comment_position.has_value()) {
-      active_threads_.fetch_add(-1);
       return;
     } else if (comment_position.value() == std::string::npos) {
       continue;
@@ -197,8 +213,6 @@ void Parser::RecursivelyParseFiles(
       }
     }
   }
-
-  active_threads_.fetch_add(-1);
 }
 
 void Parser::ReportSummary() const {
@@ -223,19 +237,32 @@ void Parser::ReportSummary() const {
 }
 
 void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
-  std::cout << "Concurrent Threads Supported: " << thread_pool_capacity_
-            << std::endl
+  const std::uint32_t thread_capacity = std::thread::hardware_concurrency();
+  std::cout << "Concurrent Threads Supported: " << thread_capacity << std::endl
             << std::endl;
+
+  for (std::uint32_t threads{0}; threads < thread_capacity; threads++) {
+    thread_pool_.emplace_back(&Parser::ThreadWaitingRoom, this);
+  }
+
   std::filesystem::recursive_directory_iterator directory_iterator(
       current_file);
 
-  std::ranges::for_each(directory_iterator,
-                        [this](const std::filesystem::path& entry) {
-                          active_threads_.fetch_add(1);
-                          this->RecursivelyParseFiles(entry);
-                        });
+  std::ranges::for_each(
+      directory_iterator, [this](const std::filesystem::path& entry) {
+        std::unique_lock<std::mutex> lock{job_lock_};
 
-  std::cout << "Files Profiled: " << file_count_ << std::endl;
+        jobs_.emplace(std::make_pair(entry, &Parser::RecursivelyParseFiles));
+        job_condition_.notify_one();
+      });
+
+  while (jobs_.size() > 0) {
+  }
+  terminate_jobs_.store(true);
+  job_condition_.notify_all();
+  thread_pool_.clear();
+
+  std::cout << "Files Profiled: " << file_count_.load() << std::endl;
   for (const auto& [_, keyword_count, keyword_literal] : keyword_pairs_) {
     std::cout << keyword_literal << "s Found: " << keyword_count << std::endl;
   }  // TODO(not_a_real_todo) test
