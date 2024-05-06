@@ -25,6 +25,7 @@ SOFTWARE.
 
 #include <array>
 #include <atomic>
+#include <condition_variable>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -61,24 +62,26 @@ class Parser {
 
   void ReportSummary() const;
 
-  void RecursivelyParseFiles(
-      const std::filesystem::path& current_file) noexcept;
+  void RecursivelyParseFiles(const std::filesystem::path& current_file);
 
   void ThreadWaitingRoom();
 
  private:
   std::array<std::tuple<std::regex, std::size_t, std::string_view>, 4>
       keyword_pairs_;
-  std::queue<std::function<void(const std::filesystem::path&)>> jobs_;
+  std::queue<
+      std::pair<std::filesystem::path,
+                std::function<void(Parser&, const std::filesystem::path&)>>>
+      jobs_;
   std::mutex print_lock_;
+  std::mutex job_lock_;
+  std::condition_variable job_condition_;
   std::unordered_map<std::string_view, std::size_t> file_type_frequencies_;
   std::optional<
       std::vector<std::tuple<std::regex, std::string_view, std::size_t>>>
       custom_regexes_;
   std::vector<std::jthread> thread_pool_;
-  std::size_t file_count_;
-  std::uint32_t thread_pool_capacity_;
-  std::atomic<std::uint16_t> active_threads_;
+  std::atomic<std::size_t> file_count_;
   std::atomic<bool> terminate_jobs_;
   bool verbose_printing_;
 
