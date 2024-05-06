@@ -46,7 +46,8 @@ Parser::Parser(const bool&& verbose_printing)
       file_type_frequencies_{},
       file_count_(0),
       custom_regexes_{std::nullopt},
-      thread_pool_capacity_{std::thread::hardware_concurrency() * 3},
+      thread_pool_capacity_{std::thread::hardware_concurrency() /
+                            std::thread::hardware_concurrency()},
       active_threads_{0},
       keyword_pairs_{{
           {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
@@ -63,7 +64,8 @@ Parser::Parser(const bool&& verbose_printing,
       custom_regexes_{std::make_optional(
           std::vector<
               std::tuple<std::regex, std::string_view, std::size_t>>{})},
-      thread_pool_capacity_{std::thread::hardware_concurrency() * 3},
+      thread_pool_capacity_{std::thread::hardware_concurrency() /
+                            std::thread::hardware_concurrency()},
       active_threads_{0},
       keyword_pairs_{{
           {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
@@ -220,30 +222,18 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
   std::vector<std::jthread> pool{};
   pool.reserve(thread_pool_capacity_);
 
-  std::ranges::for_each(
-      directory_iterator, [this, &pool](const std::filesystem::path& entry) {
-        while (active_threads_.load() >= thread_pool_capacity_) {
-        }
+  std::ranges::for_each(directory_iterator,
+                        [this, &pool](const std::filesystem::path& entry) {
+                          if (pool.size() >= thread_pool_capacity_) {
+                            pool.clear();
+                          }
 
-        if (pool.size() >= thread_pool_capacity_) {
-          for (std::jthread& job : pool) {
-            if (job.joinable()) {
-              job.join();
-            }
-          }
-          pool.clear();
-        }
+                          active_threads_.fetch_add(1);
+                          pool.emplace_back(&Parser::RecursivelyParseFiles,
+                                            this, std::ref(entry));
+                        });
 
-        active_threads_.fetch_add(1);
-        pool.emplace_back(&Parser::RecursivelyParseFiles, this,
-                          std::ref(entry));
-      });
-
-  for (std::jthread& job : pool) {
-    if (job.joinable()) {
-      job.join();
-    }
-  }
+  pool.clear();
 
   std::cout << "Files Profiled: " << file_count_ << std::endl;
   for (const auto& [_, keyword_count, keyword_literal] : keyword_pairs_) {
