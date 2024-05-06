@@ -266,7 +266,11 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
         job_condition_.notify_one();
       });
 
-  while (jobs_.size() > 0) {
+  while (true) {
+    std::unique_lock<std::mutex> lock{job_lock_};
+    if (jobs_.size() == 0) {
+      break;
+    }
   }
   terminate_jobs_.store(true);
   job_condition_.notify_all();
