@@ -112,6 +112,8 @@ inline std::optional<std::size_t> FindCommentPosition(
 }
 }  // namespace
 
+void Parser::ThreadWaitingRoom() {}
+
 const std::optional<CommentFormat> Parser::IsValidFile(
     const std::filesystem::path& file) {
   std::filesystem::path extension(file.extension());

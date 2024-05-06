@@ -64,6 +64,8 @@ class Parser {
   void RecursivelyParseFiles(
       const std::filesystem::path& current_file) noexcept;
 
+  void ThreadWaitingRoom();
+
  private:
   std::array<std::tuple<std::regex, std::size_t, std::string_view>, 4>
       keyword_pairs_;
