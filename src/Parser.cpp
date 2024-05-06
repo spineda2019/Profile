@@ -120,7 +120,7 @@ void Parser::ThreadWaitingRoom() {
     {
       std::unique_lock<std::mutex> lock{job_lock_};
       job_condition_.wait(
-          lock, [this] { return !(jobs_.empty()) || terminate_jobs_.load(); });
+          lock, [this] { return !jobs_.empty() || terminate_jobs_.load(); });
 
       if (terminate_jobs_.load()) {
         return;
@@ -249,6 +249,7 @@ void Parser::ReportSummary() const {
 
 void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
   const std::uint32_t thread_capacity = std::thread::hardware_concurrency();
+
   std::cout << "Concurrent Threads Supported: " << thread_capacity << std::endl
             << std::endl;
 
@@ -261,9 +262,11 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
 
   std::ranges::for_each(
       directory_iterator, [this](const std::filesystem::path& entry) {
-        std::unique_lock<std::mutex> lock{job_lock_};
+        {
+          std::unique_lock<std::mutex> lock{job_lock_};
 
-        jobs_.emplace(std::make_pair(entry, &Parser::RecursivelyParseFiles));
+          jobs_.emplace(std::make_pair(entry, &Parser::RecursivelyParseFiles));
+        }
         job_condition_.notify_one();
       });
 
@@ -273,6 +276,7 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
       break;
     }
   }
+
   terminate_jobs_.store(true);
   job_condition_.notify_all();
   thread_pool_.clear();
