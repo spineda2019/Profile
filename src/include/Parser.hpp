@@ -75,13 +75,15 @@ class Parser {
       jobs_;
   std::mutex print_lock_;
   std::mutex job_lock_;
+  std::mutex data_lock_;
   std::condition_variable job_condition_;
-  std::unordered_map<std::string_view, std::size_t> file_type_frequencies_;
+  std::unordered_map<std::string_view, std::atomic<std::size_t>>
+      file_type_frequencies_;
   std::optional<
       std::vector<std::tuple<std::regex, std::string_view, std::size_t>>>
       custom_regexes_;
   std::vector<std::jthread> thread_pool_;
-  std::atomic<std::size_t> file_count_;
+  std::size_t file_count_;
   std::atomic<bool> terminate_jobs_;
   bool verbose_printing_;
 

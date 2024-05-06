@@ -52,6 +52,7 @@ Parser::Parser(const bool&& verbose_printing)
       thread_pool_{},
       terminate_jobs_{false},
       job_lock_{},
+      data_lock_{},
       job_condition_{},
       keyword_pairs_{{
           {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
@@ -72,6 +73,7 @@ Parser::Parser(const bool&& verbose_printing,
       thread_pool_{},
       terminate_jobs_{false},
       job_lock_{},
+      data_lock_{},
       job_condition_{},
       keyword_pairs_{{
           {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
@@ -139,8 +141,11 @@ const std::optional<CommentFormat> Parser::IsValidFile(
   std::filesystem::path extension(file.extension());
   for (const auto& [file_extension, classification] : Parser::COMMENT_FORMATS) {
     if (extension == file_extension) {
-      file_type_frequencies_.try_emplace(file_extension, 0);
-      file_type_frequencies_[file_extension]++;
+      {
+        std::unique_lock<std::mutex> lock{data_lock_};
+        file_type_frequencies_.try_emplace(file_extension, 0);
+        file_type_frequencies_[file_extension].fetch_add(1);
+      }
       return classification;
     }
   }
@@ -166,7 +171,10 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   std::optional<std::size_t> comment_position{};
   std::size_t position{};
   std::string::iterator start{};
-  file_count_.fetch_add(1);
+  {
+    std::unique_lock<std::mutex> lock{data_lock_};
+    file_count_++;
+  }
 
   while (std::getline(file_stream, line)) {
     line_count++;
@@ -193,6 +201,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
                     << "Line: " << line << std::endl
                     << std::endl;
         }
+        std::unique_lock<std::mutex> lock{data_lock_};
         keyword_count++;
       }
     }
@@ -208,6 +217,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
                       << "Line: " << line << std::endl
                       << std::endl;
           }
+          std::unique_lock<std::mutex> lock{data_lock_};
           count++;
         }
       }
@@ -262,7 +272,7 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
   job_condition_.notify_all();
   thread_pool_.clear();
 
-  std::cout << "Files Profiled: " << file_count_.load() << std::endl;
+  std::cout << "Files Profiled: " << file_count_ << std::endl;
   for (const auto& [_, keyword_count, keyword_literal] : keyword_pairs_) {
     std::cout << keyword_literal << "s Found: " << keyword_count << std::endl;
   }  // TODO(not_a_real_todo) test
