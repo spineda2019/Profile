@@ -192,7 +192,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
          keyword_pairs_) {
       if (std::regex_search(sub_str, keyword_regex)) {
         if (verbose_printing_) {
-          std::lock_guard lock(print_lock_);
+          std::scoped_lock<std::mutex> lock{print_lock_};
           std::cout << keyword_literal << " Found:" << std::endl
                     << "File: " << current_file << std::endl
                     << "Line Number: " << line_count << std::endl
@@ -208,7 +208,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
       for (auto& [regex, literal, count] : custom_regexes_.value()) {
         if (std::regex_search(sub_str, regex)) {
           if (verbose_printing_) {
-            std::lock_guard lock(print_lock_);
+            std::scoped_lock<std::mutex> lock{print_lock_};
             std::cout << "Regex " << literal << " Found:" << std::endl
                       << "File: " << current_file << std::endl
                       << "Line Number: " << line_count << std::endl
@@ -216,10 +216,8 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
                       << std::endl;
           }
 
-          {
-            std::unique_lock<std::mutex> lock{data_lock_};
-            count++;
-          }
+          std::scoped_lock<std::mutex> lock{data_lock_};
+          count++;
         }
       }
     }
@@ -264,7 +262,6 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
       directory_iterator, [this](const std::filesystem::path& entry) {
         {
           std::unique_lock<std::mutex> lock{job_lock_};
-
           jobs_.emplace(std::make_pair(entry, &Parser::RecursivelyParseFiles));
         }
         job_condition_.notify_one();
