@@ -292,8 +292,8 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
       });
 
   while (true) {
-    std::unique_lock<std::mutex> lock{job_lock_};
-    if (jobs_.size() == 0) {
+    [[unlikely]]
+    if (std::unique_lock<std::mutex> lock{job_lock_}; jobs_.size() == 0) {
       break;
     }
   }
