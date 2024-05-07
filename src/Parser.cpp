@@ -115,8 +115,7 @@ Parser::Parser(const bool&& verbose_printing,
 
 namespace {
 inline std::optional<std::size_t> FindCommentPosition(
-    const CommentFormat& comment_format, const std::string_view line,
-    const std::filesystem::path& current_file) {
+    const CommentFormat& comment_format, const std::string_view line) {
   switch (comment_format) {
     case CommentFormat::DoubleSlash:
       return line.find("//");
@@ -203,8 +202,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   while (std::getline(file_stream, line)) {
     line_count++;
 
-    comment_position =
-        FindCommentPosition(comment_format.value(), line, current_file);
+    comment_position = FindCommentPosition(comment_format.value(), line);
 
     if (!comment_position.has_value()) {
       return;
