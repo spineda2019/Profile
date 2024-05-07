@@ -77,11 +77,13 @@ int main(int argc, char** argv) {
     std::cout
         << "Copyright (c) 2024 Sebastian Pineda (spineda.wpi.alum@gmail.com)"
         << std::endl;
-    std::cout << "This software is licensed under the MIT license. You should "
-                 "have received it \nwith this copy of the software. If you "
-                 "didn't, double check with your provider."
-              << std::endl
-              << std::endl;
+    std::cout
+        << "This program is free software; you may redistribute it under the "
+           "terms of the\nGNU General Public License version 2 or (at your "
+           "option) any later version. This\nprogram has absolutely no "
+           "warranty."
+        << std::endl
+        << std::endl;
     return 0;
   }
 
