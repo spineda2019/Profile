@@ -55,6 +55,18 @@ Parser::Parser(const bool&& verbose_printing)
       job_lock_{},
       data_lock_{},
       job_condition_{},
+      comment_formats_{
+          {".c", CommentFormat::DoubleSlash},
+          {".cpp", CommentFormat::DoubleSlash},
+          {".h", CommentFormat::DoubleSlash},
+          {".hpp", CommentFormat::DoubleSlash},
+          {".js", CommentFormat::DoubleSlash},
+          {".rs", CommentFormat::DoubleSlash},
+          {".ts", CommentFormat::DoubleSlash},
+          {".zig", CommentFormat::DoubleSlash},
+          {".cs", CommentFormat::DoubleSlash},
+          {".py", CommentFormat::PoundSign},
+      },
       keyword_pairs_{{
           {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
           {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
@@ -76,6 +88,18 @@ Parser::Parser(const bool&& verbose_printing,
       job_lock_{},
       data_lock_{},
       job_condition_{},
+      comment_formats_{
+          {".c", CommentFormat::DoubleSlash},
+          {".cpp", CommentFormat::DoubleSlash},
+          {".h", CommentFormat::DoubleSlash},
+          {".hpp", CommentFormat::DoubleSlash},
+          {".js", CommentFormat::DoubleSlash},
+          {".rs", CommentFormat::DoubleSlash},
+          {".ts", CommentFormat::DoubleSlash},
+          {".zig", CommentFormat::DoubleSlash},
+          {".cs", CommentFormat::DoubleSlash},
+          {".py", CommentFormat::PoundSign},
+      },
       keyword_pairs_{{
           {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
           {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
@@ -137,21 +161,22 @@ void Parser::ThreadWaitingRoom() {
 }
 
 const std::optional<CommentFormat> Parser::IsValidFile(
-    const std::filesystem::path& file) {
-  std::filesystem::path extension(file.extension());
-  for (const auto& [file_extension, classification] : Parser::COMMENT_FORMATS) {
-    if (extension == file_extension) {
-      {
-        std::unique_lock<std::mutex> lock{data_lock_};
-        file_type_frequencies_.try_emplace(file_extension, 0);
-      }
+    const std::string_view extension) {
+  [[likely]]
+  if (comment_formats_.contains(extension)) {
+    std::string ext_str{extension};
 
-      file_type_frequencies_[file_extension].fetch_add(1);
-      return classification;
+    if (std::scoped_lock<std::mutex> lock{data_lock_};
+        file_type_frequencies_.contains(ext_str)) {
+      file_type_frequencies_[ext_str]++;
+    } else {
+      file_type_frequencies_.emplace(ext_str, 1);
     }
-  }
 
-  return std::nullopt;
+    return comment_formats_.at(extension);
+  } else {
+    return std::nullopt;
+  }
 }
 
 void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
@@ -160,7 +185,8 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
     return;
   }
 
-  std::optional<CommentFormat> comment_format{this->IsValidFile(current_file)};
+  std::optional<CommentFormat> comment_format{
+      this->IsValidFile(current_file.extension().c_str())};
 
   if (!comment_format.has_value()) {
     return;

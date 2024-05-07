@@ -57,8 +57,7 @@ class Parser {
   void ParseFiles(const std::filesystem::path& current_file) noexcept;
 
  private:
-  const std::optional<CommentFormat> IsValidFile(
-      const std::filesystem::path& file);
+  const std::optional<CommentFormat> IsValidFile(const std::string_view file);
 
   void ReportSummary() const;
 
@@ -77,9 +76,9 @@ class Parser {
   std::mutex print_lock_;
   std::mutex job_lock_;
   std::mutex data_lock_;
+  std::unordered_map<std::string, std::size_t> file_type_frequencies_;
+  const std::unordered_map<std::string_view, CommentFormat> comment_formats_;
   std::condition_variable job_condition_;
-  std::unordered_map<std::string_view, std::atomic<std::size_t>>
-      file_type_frequencies_;
   std::optional<
       std::vector<std::tuple<std::regex, std::string_view, std::size_t>>>
       custom_regexes_;
@@ -87,20 +86,6 @@ class Parser {
   std::atomic<std::size_t> file_count_;
   std::atomic<bool> terminate_jobs_;
   const bool verbose_printing_;
-
-  static constexpr std::array<std::pair<std::string_view, CommentFormat>, 10>
-      COMMENT_FORMATS{{
-          {".c", CommentFormat::DoubleSlash},
-          {".cpp", CommentFormat::DoubleSlash},
-          {".h", CommentFormat::DoubleSlash},
-          {".hpp", CommentFormat::DoubleSlash},
-          {".js", CommentFormat::DoubleSlash},
-          {".rs", CommentFormat::DoubleSlash},
-          {".ts", CommentFormat::DoubleSlash},
-          {".zig", CommentFormat::DoubleSlash},
-          {".cs", CommentFormat::DoubleSlash},
-          {".py", CommentFormat::PoundSign},
-      }};
 };
 
 }  // namespace parser_info
