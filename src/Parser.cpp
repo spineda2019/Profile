@@ -145,6 +145,7 @@ void Parser::ThreadWaitingRoom() {
       job_condition_.wait(
           lock, [this] { return !jobs_.empty() || terminate_jobs_.load(); });
 
+      [[unlikely]]
       if (terminate_jobs_.load()) {
         return;
       }
@@ -161,7 +162,6 @@ void Parser::ThreadWaitingRoom() {
 
 const std::optional<CommentFormat> Parser::IsValidFile(
     const std::string_view extension) {
-  [[likely]]
   if (comment_formats_.contains(extension)) {
     std::string ext_str{extension};
 
