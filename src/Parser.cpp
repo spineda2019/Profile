@@ -181,7 +181,7 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   }
 
   std::optional<CommentFormat> comment_format{
-      this->IsValidFile(current_file.extension().c_str())};
+      this->IsValidFile(current_file.extension().string())};
 
   if (!comment_format.has_value()) {
     return;
