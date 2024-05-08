@@ -141,7 +141,9 @@ void Parser::ThreadWaitingRoom() {
       job_condition_.wait(
           lock, [this] { return !jobs_.empty() || terminate_jobs_.load(); });
 
-      [[unlikely]] if (terminate_jobs_.load()) { return; }
+      if (terminate_jobs_.load()) [[unlikely]] {
+        return;
+      }
 
       entry = jobs_.front().first;
       job = jobs_.front().second;
@@ -272,8 +274,8 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
 
   std::ranges::for_each(
       directory_iterator, [this](const std::filesystem::path& entry) {
-        [[likely]] if (!(std::filesystem::is_symlink(entry) ||
-                         std::filesystem::is_directory(entry))) {
+        if (!(std::filesystem::is_symlink(entry) ||
+              std::filesystem::is_directory(entry))) [[likely]] {
           {
             std::unique_lock<std::mutex> lock{job_lock_};
             jobs_.emplace(
@@ -284,8 +286,8 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
       });
 
   while (true) {
-    [[unlikely]] if (std::unique_lock<std::mutex> lock{job_lock_};
-                     jobs_.size() == 0) {
+    if (std::unique_lock<std::mutex> lock{job_lock_}; jobs_.size() == 0)
+        [[unlikely]] {
       break;
     }
   }
