@@ -141,10 +141,7 @@ void Parser::ThreadWaitingRoom() {
       job_condition_.wait(
           lock, [this] { return !jobs_.empty() || terminate_jobs_.load(); });
 
-      [[unlikely]]
-      if (terminate_jobs_.load()) {
-        return;
-      }
+      [[unlikely]] if (terminate_jobs_.load()) { return; }
 
       entry = jobs_.front().first;
       job = jobs_.front().second;
@@ -175,11 +172,6 @@ const std::optional<CommentFormat> Parser::IsValidFile(
 }
 
 void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
-  if (std::filesystem::is_symlink(current_file) ||
-      std::filesystem::is_directory(current_file)) {
-    return;
-  }
-
   std::optional<CommentFormat> comment_format{
       this->IsValidFile(current_file.extension().string())};
 
@@ -280,16 +272,20 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
 
   std::ranges::for_each(
       directory_iterator, [this](const std::filesystem::path& entry) {
-        {
-          std::unique_lock<std::mutex> lock{job_lock_};
-          jobs_.emplace(std::make_pair(entry, &Parser::RecursivelyParseFiles));
+        if (!(std::filesystem::is_symlink(entry) ||
+              std::filesystem::is_directory(entry))) {
+          {
+            std::unique_lock<std::mutex> lock{job_lock_};
+            jobs_.emplace(
+                std::make_pair(entry, &Parser::RecursivelyParseFiles));
+          }
+          job_condition_.notify_one();
         }
-        job_condition_.notify_one();
       });
 
   while (true) {
-    [[unlikely]]
-    if (std::unique_lock<std::mutex> lock{job_lock_}; jobs_.size() == 0) {
+    [[unlikely]] if (std::unique_lock<std::mutex> lock{job_lock_};
+                     jobs_.size() == 0) {
       break;
     }
   }
