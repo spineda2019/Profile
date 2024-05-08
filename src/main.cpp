@@ -91,13 +91,13 @@ int main(int argc, char** argv) {
   std::filesystem::path directory(std::filesystem::canonical(
       std::filesystem::absolute(dir_str.value_or("."))));
 
-  std::cout << "Profiling Directory " << directory << std::endl << std::endl;
-
   if (!directory_validation::DirectoryExists(directory)) {
     std::cerr << "FATAL: Directory " << directory << " does not exist!"
               << std::endl;
     return -1;
   }
+
+  std::cout << "Profiling Directory " << directory << std::endl << std::endl;
 
   if (std::vector<std::string> regexes{
           argument_parser.get<std::vector<std::string>>("-c")};
