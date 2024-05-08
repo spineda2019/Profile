@@ -272,8 +272,8 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
 
   std::ranges::for_each(
       directory_iterator, [this](const std::filesystem::path& entry) {
-        if (!(std::filesystem::is_symlink(entry) ||
-              std::filesystem::is_directory(entry))) {
+        [[likely]] if (!(std::filesystem::is_symlink(entry) ||
+                         std::filesystem::is_directory(entry))) {
           {
             std::unique_lock<std::mutex> lock{job_lock_};
             jobs_.emplace(
