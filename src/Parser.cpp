@@ -278,7 +278,7 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
               std::filesystem::is_directory(entry))) [[likely]] {
           {
             std::unique_lock<std::mutex> lock{job_lock_};
-            jobs_.emplace(entry, &Parser::RecursivelyParseFiles);
+            jobs_.emplace(std::move(entry), &Parser::RecursivelyParseFiles);
           }
           job_condition_.notify_one();
         }
