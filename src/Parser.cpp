@@ -23,7 +23,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
-#include <functional>
 #include <iomanip>
 #include <ios>
 #include <iostream>
@@ -144,7 +143,7 @@ void Parser::ThreadWaitingRoom() {
         return;
       }
 
-      entry = std::move(jobs_.front());
+      entry.swap(jobs_.front());
 
       jobs_.pop();
     }
