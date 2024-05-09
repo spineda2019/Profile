@@ -132,10 +132,10 @@ inline std::optional<std::size_t> FindCommentPosition(
 }  // namespace
 
 void Parser::ThreadWaitingRoom() {
-  while (true) {
-    std::function<void(Parser&, const std::filesystem::path&)> job{};
-    std::filesystem::path entry{};
+  std::function<void(Parser&, const std::filesystem::path&)> job{};
+  std::filesystem::path entry{};
 
+  while (true) {
     {
       std::unique_lock<std::mutex> lock{job_lock_};
       job_condition_.wait(
