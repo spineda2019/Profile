@@ -132,7 +132,6 @@ inline std::optional<std::size_t> FindCommentPosition(
 }  // namespace
 
 void Parser::ThreadWaitingRoom() {
-  std::function<void(Parser&, const std::filesystem::path&)> job{};
   std::filesystem::path entry{};
 
   while (true) {
@@ -145,13 +144,12 @@ void Parser::ThreadWaitingRoom() {
         return;
       }
 
-      entry = std::move(jobs_.front().first);
-      job = std::move(jobs_.front().second);
+      entry = std::move(jobs_.front());
 
       jobs_.pop();
     }
 
-    job(*this, entry);
+    this->RecursivelyParseFiles(entry);
   }
 }
 
@@ -276,7 +274,7 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
               std::filesystem::is_directory(entry))) [[likely]] {
           {
             std::unique_lock<std::mutex> lock{job_lock_};
-            jobs_.emplace(std::move(entry), &Parser::RecursivelyParseFiles);
+            jobs_.emplace(std::move(entry));
           }
           job_condition_.notify_one();
         }
