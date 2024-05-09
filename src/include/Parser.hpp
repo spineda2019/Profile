@@ -30,8 +30,10 @@
 #include <optional>
 #include <queue>
 #include <regex>
+#include <string>
 #include <string_view>
 #include <thread>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -53,7 +55,7 @@ class Parser {
   void ParseFiles(const std::filesystem::path& current_file) noexcept;
 
  private:
-  const std::optional<CommentFormat> IsValidFile(const std::string_view file);
+  const std::optional<CommentFormat> IsValidFile(const std::string&& file);
 
   void ReportSummary() const;
 

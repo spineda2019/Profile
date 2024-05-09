@@ -156,15 +156,13 @@ void Parser::ThreadWaitingRoom() {
 }
 
 const std::optional<CommentFormat> Parser::IsValidFile(
-    const std::string_view extension) {
+    const std::string&& extension) {
   if (comment_formats_.contains(extension)) {
-    std::string ext_str{extension};
-
     if (std::scoped_lock<std::mutex> lock{data_lock_};
-        file_type_frequencies_.contains(ext_str)) {
-      file_type_frequencies_[ext_str]++;
+        file_type_frequencies_.contains(extension)) {
+      file_type_frequencies_[extension]++;
     } else {
-      file_type_frequencies_.emplace(ext_str, 1);
+      file_type_frequencies_.emplace(extension, 1);
     }
 
     return comment_formats_.at(extension);
