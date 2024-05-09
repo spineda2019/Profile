@@ -4,7 +4,6 @@ out/
 .vs/
 build/
 linux_build/
-benchmark.py
 Profile.md
 log.txt
 # Prerequisites
