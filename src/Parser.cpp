@@ -145,8 +145,8 @@ void Parser::ThreadWaitingRoom() {
         return;
       }
 
-      entry = jobs_.front().first;
-      job = jobs_.front().second;
+      entry = std::move(jobs_.front().first);
+      job = std::move(jobs_.front().second);
 
       jobs_.pop();
     }
