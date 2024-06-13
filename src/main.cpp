@@ -61,6 +61,10 @@ int main(int argc, char** argv) {
       .help("Display Program Version")
       .flag();
 
+  argument_parser.add_argument("-a", "--list")
+      .help("List Recognized Filetypes")
+      .flag();
+
   try {
     argument_parser.parse_args(argc, argv);
   } catch (const std::exception& err) {
