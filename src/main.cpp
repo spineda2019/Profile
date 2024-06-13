@@ -17,10 +17,14 @@
  */
 
 #include <argparse/argparse.hpp>
+#include <array>
 #include <filesystem>
+#include <iomanip>
+#include <ios>
 #include <iostream>
 #include <span>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "include/Parser.hpp"
@@ -34,6 +38,22 @@ constexpr bool NoEmptyRegexes(const std::span<std::string> regexes) {
   }
   return true;
 }
+
+constexpr std::array<std::pair<std::string_view, std::string_view>, 10>
+    supported_languages{{
+        {"C", "//"},
+        {"C++", "//"},
+        {"C Header Files", "//"},
+        {"C++ Header Files", "//"},
+        {"JavaScript", "//"},
+        {"TypeScript", "//"},
+        {"Rust", "//"},
+        {"Zig", "//"},
+        {"C#", "//"},
+        {"Python", "#"},
+    }};
+
+constexpr std::size_t max_column_width{18};
 
 constexpr const char* version{"1.0.1"};
 
@@ -61,7 +81,7 @@ int main(int argc, char** argv) {
       .help("Display Program Version")
       .flag();
 
-  argument_parser.add_argument("-a", "--list")
+  argument_parser.add_argument("-a", "--list-all")
       .help("List Recognized Filetypes")
       .flag();
 
@@ -88,6 +108,23 @@ int main(int argc, char** argv) {
            "warranty."
         << std::endl
         << std::endl;
+    return 0;
+  } else if (argument_parser.get<bool>("-a")) {
+    std::cout << std::endl
+              << "Supported Languages (Contact spineda.wpi.alum@gmail.com or "
+                 "submit a github issue for suggestions):"
+              << std::endl
+              << std::endl
+              << "-------------------------------" << std::endl
+              << std::left << std::setw(max_column_width) << "Language"
+              << std::left << "|" << std::left << std::setw(max_column_width)
+              << "Comment Type" << std::endl
+              << "-------------------------------" << std::endl;
+    for (const auto [file_type, comment_type] : supported_languages) {
+      std::cout << std::left << std::setw(max_column_width) << file_type
+                << std::left << "|" << std::string{max_column_width / 2}
+                << std::setw(max_column_width) << comment_type << std::endl;
+    }
     return 0;
   }
 
