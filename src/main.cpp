@@ -55,7 +55,7 @@ constexpr std::array<std::pair<std::string_view, std::string_view>, 10>
 
 constexpr std::size_t max_column_width{18};
 
-constexpr const char* version{"1.0.1"};
+constexpr const char* version{"1.0.2"};
 
 int main(int argc, char** argv) {
   argparse::ArgumentParser argument_parser("Profile", version,
