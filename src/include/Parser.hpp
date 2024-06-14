@@ -25,7 +25,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
-#include <functional>
 #include <mutex>
 #include <optional>
 #include <queue>
@@ -35,7 +34,6 @@
 #include <thread>
 #include <tuple>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
 namespace parser_info {
