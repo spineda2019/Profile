@@ -47,7 +47,8 @@ class Parser {
  public:
   explicit Parser(
       const bool&& verbose_printing,
-      const std::optional<std::vector<std::string>>&& custom_regexes);
+      const std::optional<std::vector<std::string>>&& custom_regexes,
+      const std::optional<std::string>&& csv_file_path);
   ~Parser() = default;
 
   void ParseFiles(const std::filesystem::path& current_file) noexcept;
@@ -74,6 +75,7 @@ class Parser {
   std::condition_variable job_condition_;
   std::optional<std::vector<std::tuple<std::regex, std::string, std::size_t>>>
       custom_regexes_;
+  const std::optional<std::string> csv_file_path_;
   std::vector<std::jthread> thread_pool_;
   std::atomic<std::size_t> file_count_;
   std::atomic<bool> terminate_jobs_;

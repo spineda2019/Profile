@@ -29,6 +29,7 @@
 #include <mutex>
 #include <optional>
 #include <ostream>
+#include <queue>
 #include <regex>
 #include <string>
 #include <string_view>
@@ -40,11 +41,13 @@
 
 namespace parser_info {
 Parser::Parser(const bool&& verbose_printing,
-               const std::optional<std::vector<std::string>>&& custom_regexes)
+               const std::optional<std::vector<std::string>>&& custom_regexes,
+               const std::optional<std::string>&& csv_file_path)
     : verbose_printing_(verbose_printing),
       file_type_frequencies_{},
       file_count_(0),
       custom_regexes_{std::nullopt},
+      csv_file_path_{csv_file_path},
       jobs_{},
       thread_pool_{},
       terminate_jobs_{false},
@@ -101,6 +104,27 @@ inline std::optional<std::size_t> FindCommentPosition(
    */
   return std::nullopt;
 }
+
+namespace csv {
+constexpr std::string_view csv_header{"FileName,Keyword,LineNumber,Line"};
+using CsvLine = std::tuple<std::string, std::string, std::string, std::string>;
+std::queue<CsvLine> csv_line_queue{};
+
+void CsvWaitingRoom(const std::string& csv_path) {
+  std::ofstream csv_stream{};
+  if (std::filesystem::exists(csv_path)) {
+    std::cout << "Appending data in existing file: " << csv_path << std::endl
+              << std::endl;
+    csv_stream = std::ofstream{csv_path, std::ios_base::app};
+  } else {
+    std::cout << "Storing data in new file: " << csv_path << std::endl
+              << std::endl;
+    csv_stream = std::ofstream{csv_path};
+  }
+}
+
+}  // namespace csv
+
 }  // namespace
 
 void Parser::ThreadWaitingRoom() {
@@ -235,6 +259,11 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
 
   for (std::uint32_t threads{0}; threads < thread_capacity; threads++) {
     thread_pool_.emplace_back(&Parser::ThreadWaitingRoom, this);
+  }
+
+  std::jthread csv_thread{};
+  if (csv_file_path_.has_value()) {
+    csv_thread = std::jthread(&csv::CsvWaitingRoom, csv_file_path_.value());
   }
 
   std::filesystem::recursive_directory_iterator directory_iterator(
