@@ -22,6 +22,7 @@
 #include <iomanip>
 #include <ios>
 #include <iostream>
+#include <optional>
 #include <span>
 #include <string_view>
 #include <utility>
@@ -63,6 +64,9 @@ int main(int argc, char** argv) {
 
   argument_parser.add_argument("--directory", "-d")
       .help("Directory to Profile");
+
+  argument_parser.add_argument("--file", "-f")
+      .help("Output Information to csv");
 
   argument_parser.add_argument("-c", "--custom")
       .default_value(std::vector<std::string>{})
@@ -147,7 +151,7 @@ int main(int argc, char** argv) {
                                std::move(regexes)};
     parser.ParseFiles(directory);
   } else {
-    parser_info::Parser parser{argument_parser.get<bool>("-l")};
+    parser_info::Parser parser{argument_parser.get<bool>("-l"), std::nullopt};
     parser.ParseFiles(directory);
   }
 
