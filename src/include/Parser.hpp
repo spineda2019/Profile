@@ -47,9 +47,9 @@ enum class CommentFormat : std::uint8_t {
 
 class Parser {
  public:
-  explicit Parser(const bool&& verbose_printing);
-  explicit Parser(const bool&& verbose_printing,
-                  const std::vector<std::string>&& custom_regexes);
+  explicit Parser(
+      const bool&& verbose_printing,
+      const std::optional<std::vector<std::string>>&& custom_regexes);
   ~Parser() = default;
 
   void ParseFiles(const std::filesystem::path& current_file) noexcept;
@@ -74,8 +74,7 @@ class Parser {
   std::unordered_map<std::string, std::size_t> file_type_frequencies_;
   const std::unordered_map<std::string_view, CommentFormat> comment_formats_;
   std::condition_variable job_condition_;
-  std::optional<
-      std::vector<std::tuple<std::regex, std::string_view, std::size_t>>>
+  std::optional<std::vector<std::tuple<std::regex, std::string, std::size_t>>>
       custom_regexes_;
   std::vector<std::jthread> thread_pool_;
   std::atomic<std::size_t> file_count_;

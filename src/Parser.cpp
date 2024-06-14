@@ -39,7 +39,8 @@
 #include <vector>
 
 namespace parser_info {
-Parser::Parser(const bool&& verbose_printing)
+Parser::Parser(const bool&& verbose_printing,
+               const std::optional<std::vector<std::string>>&& custom_regexes)
     : verbose_printing_(verbose_printing),
       file_type_frequencies_{},
       file_count_(0),
@@ -67,44 +68,16 @@ Parser::Parser(const bool&& verbose_printing)
           {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
           {std::regex("\\bBUG(\\(\\w*\\))?"), 0, "BUG"},
           {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
-      }} {}
-
-Parser::Parser(const bool&& verbose_printing,
-               const std::vector<std::string>&& custom_regexes)
-    : verbose_printing_(verbose_printing),
-      file_type_frequencies_{},
-      file_count_(0),
-      custom_regexes_{std::make_optional(
-          std::vector<std::tuple<std::regex, std::string_view, std::size_t>>{
-              custom_regexes.size()})},
-      jobs_{},
-      thread_pool_{},
-      terminate_jobs_{false},
-      job_lock_{},
-      data_lock_{},
-      job_condition_{},
-      comment_formats_{
-          {".c", CommentFormat::DoubleSlash},
-          {".cpp", CommentFormat::DoubleSlash},
-          {".h", CommentFormat::DoubleSlash},
-          {".hpp", CommentFormat::DoubleSlash},
-          {".js", CommentFormat::DoubleSlash},
-          {".rs", CommentFormat::DoubleSlash},
-          {".ts", CommentFormat::DoubleSlash},
-          {".zig", CommentFormat::DoubleSlash},
-          {".cs", CommentFormat::DoubleSlash},
-          {".py", CommentFormat::PoundSign},
-      },
-      keyword_pairs_{{
-          {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
-          {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
-          {std::regex("\\bBUG(\\(\\w*\\))?"), 0, "BUG"},
-          {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
       }} {
-  for (const std::string& regex : custom_regexes) {
-    custom_regexes_->emplace_back(
-        std::make_tuple<std::regex, std::string_view, std::size_t>(
-            std::regex{regex}, std::string_view{regex}, 0));
+  if (custom_regexes.has_value()) {
+    custom_regexes_ = std::make_optional(
+        std::vector<std::tuple<std::regex, std::string, std::size_t>>{});
+    custom_regexes_.value().reserve(custom_regexes.value().size());
+    for (const std::string& regex : custom_regexes.value()) {
+      custom_regexes_->emplace_back(
+          std::make_tuple<std::regex, std::string, std::size_t>(
+              std::regex{regex}, std::string{regex}, 0));
+    }
   }
 }
 
