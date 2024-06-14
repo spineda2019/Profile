@@ -148,10 +148,12 @@ int main(int argc, char** argv) {
           argument_parser.get<std::vector<std::string>>("-c")};
       regexes.size() != 0 && NoEmptyRegexes(regexes)) {
     parser_info::Parser parser{argument_parser.get<bool>("-l"),
-                               std::move(regexes)};
+                               std::move(regexes),
+                               argument_parser.present("-f")};
     parser.ParseFiles(directory);
   } else {
-    parser_info::Parser parser{argument_parser.get<bool>("-l"), std::nullopt};
+    parser_info::Parser parser{argument_parser.get<bool>("-l"), std::nullopt,
+                               argument_parser.present("-f")};
     parser.ParseFiles(directory);
   }
 
