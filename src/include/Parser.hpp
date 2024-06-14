@@ -25,6 +25,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <mutex>
 #include <optional>
 #include <queue>
@@ -42,6 +43,8 @@ enum class CommentFormat : std::uint8_t {
   DoubleSlash,
   PoundSign,
 };
+
+using CsvLine = std::tuple<std::string, std::string, std::string, std::string>;
 
 class Parser {
  public:
@@ -70,12 +73,13 @@ class Parser {
   std::mutex print_lock_;
   std::mutex job_lock_;
   std::mutex data_lock_;
+  std::mutex csv_lock_;
   std::unordered_map<std::string, std::size_t> file_type_frequencies_;
   const std::unordered_map<std::string_view, CommentFormat> comment_formats_;
   std::condition_variable job_condition_;
   std::optional<std::vector<std::tuple<std::regex, std::string, std::size_t>>>
       custom_regexes_;
-  const std::optional<std::string> csv_file_path_;
+  std::optional<std::ofstream> csv_file_;
   std::vector<std::jthread> thread_pool_;
   std::atomic<std::size_t> file_count_;
   std::atomic<bool> terminate_jobs_;

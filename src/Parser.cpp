@@ -47,12 +47,13 @@ Parser::Parser(const bool&& verbose_printing,
       file_type_frequencies_{},
       file_count_(0),
       custom_regexes_{std::nullopt},
-      csv_file_path_{csv_file_path},
+      csv_file_{},
       jobs_{},
       thread_pool_{},
       terminate_jobs_{false},
       job_lock_{},
       data_lock_{},
+      csv_lock_{},
       job_condition_{},
       comment_formats_{
           {".c", CommentFormat::DoubleSlash},
@@ -72,6 +73,7 @@ Parser::Parser(const bool&& verbose_printing,
           {std::regex("\\bBUG(\\(\\w*\\))?"), 0, "BUG"},
           {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
       }} {
+  constexpr std::string_view csv_header{"FileName,Keyword,LineNumber,Line"};
   if (custom_regexes.has_value()) {
     custom_regexes_ = std::make_optional(
         std::vector<std::tuple<std::regex, std::string, std::size_t>>{});
@@ -80,6 +82,22 @@ Parser::Parser(const bool&& verbose_printing,
       custom_regexes_->emplace_back(
           std::make_tuple<std::regex, std::string, std::size_t>(
               std::regex{regex}, std::string{regex}, 0));
+    }
+  }
+
+  if (csv_file_path.has_value()) {
+    if (std::filesystem::exists(csv_file_path.value())) {
+      std::cout << "Appending data in existing file: " << csv_file_path.value()
+                << std::endl
+                << std::endl;
+      csv_file_ = std::make_optional<std::ofstream>(csv_file_path.value(),
+                                                    std::ios_base::app);
+    } else {
+      std::cout << "Storing data in new file: " << csv_file_path.value()
+                << std::endl
+                << std::endl;
+      csv_file_ = std::make_optional<std::ofstream>(csv_file_path.value());
+      csv_file_.value() << csv_header << std::endl;
     }
   }
 }
@@ -104,26 +122,6 @@ inline std::optional<std::size_t> FindCommentPosition(
    */
   return std::nullopt;
 }
-
-namespace csv {
-constexpr std::string_view csv_header{"FileName,Keyword,LineNumber,Line"};
-using CsvLine = std::tuple<std::string, std::string, std::string, std::string>;
-std::queue<CsvLine> csv_line_queue{};
-
-void CsvWaitingRoom(const std::string& csv_path) {
-  std::ofstream csv_stream{};
-  if (std::filesystem::exists(csv_path)) {
-    std::cout << "Appending data in existing file: " << csv_path << std::endl
-              << std::endl;
-    csv_stream = std::ofstream{csv_path, std::ios_base::app};
-  } else {
-    std::cout << "Storing data in new file: " << csv_path << std::endl
-              << std::endl;
-    csv_stream = std::ofstream{csv_path};
-  }
-}
-
-}  // namespace csv
 
 }  // namespace
 
@@ -207,6 +205,13 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
         }
 
         keyword_count.fetch_add(1);
+        if (csv_file_.has_value()) {
+          std::scoped_lock<std::mutex> lock{csv_lock_};
+          csv_file_.value() << "\"" << current_file.string() << "\"" << ",";
+          csv_file_.value() << "\"" << keyword_literal << "\"" << ",";
+          csv_file_.value() << line_count << ",";
+          csv_file_.value() << "\"" << line << "\"" << std::endl;
+        }
       }
     }
 
@@ -222,8 +227,17 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
                       << std::endl;
           }
 
-          std::scoped_lock<std::mutex> lock{data_lock_};
-          count++;
+          {
+            std::scoped_lock<std::mutex> lock{data_lock_};
+            count++;
+          }
+          if (csv_file_.has_value()) {
+            std::scoped_lock<std::mutex> lock{csv_lock_};
+            csv_file_.value() << "\"" << current_file.string() << "\"" << ",";
+            csv_file_.value() << "\"" << literal << "\"" << ",";
+            csv_file_.value() << line_count << ",";
+            csv_file_.value() << "\"" << line << "\"" << std::endl;
+          }
         }
       }
     }
@@ -261,11 +275,6 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
     thread_pool_.emplace_back(&Parser::ThreadWaitingRoom, this);
   }
 
-  std::jthread csv_thread{};
-  if (csv_file_path_.has_value()) {
-    csv_thread = std::jthread(&csv::CsvWaitingRoom, csv_file_path_.value());
-  }
-
   std::filesystem::recursive_directory_iterator directory_iterator(
       current_file);
 
@@ -282,7 +291,7 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
       });
 
   while (true) {
-    if (std::unique_lock<std::mutex> lock{job_lock_}; jobs_.size() == 0)
+    if (std::unique_lock<std::mutex> lock{job_lock_}; jobs_.empty())
         [[unlikely]] {
       break;
     }
