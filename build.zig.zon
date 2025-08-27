@@ -1,0 +1,32 @@
+.{
+    .name = .profile,
+
+    .version = "0.0.1",
+
+    .fingerprint = 0x8157aa0f597a9e3a, // Changing this has security and trust implications.
+
+    .minimum_zig_version = "0.15.1",
+
+    .dependencies = .{
+        // See `zig fetch --save <url>` for a command-line interface for adding dependencies.
+        .argparse = .{
+            .url = "git+https://github.com/p-ranav/argparse#v3.2",
+            .hash = "N-V-__8AAJu2CQCBc7Au7fTqai34PIWjLb4fyi8V4oHA1Wir",
+        },
+    },
+    // Specifies the set of files and directories that are included in this package.
+    // Only files and directories listed here are included in the `hash` that
+    // is computed for this package. Only files listed here will remain on disk
+    // when using the zig package manager. As a rule of thumb, one should list
+    // files required for compilation plus any license(s).
+    // Paths are relative to the build root. Use the empty string (`""`) to refer to
+    // the build root itself.
+    // A directory listed here means that all files within, recursively, are included.
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "LICENSE",
+        "README.md",
+    },
+}
