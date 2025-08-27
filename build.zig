@@ -1,15 +1,20 @@
 const std = @import("std");
 
+const SourceFile = struct {
+    name: []const u8,
+    directory: []const u8,
+};
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
     const modargparse = b.dependency("argparse", .{});
 
-    const files: []const []const u8 = comptime &.{
-        "src/main.cpp",
-        "src/directory_validator.cpp",
-        "src/Parser.cpp",
+    const files: []const SourceFile = comptime &.{
+        .{ .name = "main.cpp", .directory = "src/" },
+        .{ .name = "directory_validator.cpp", .directory = "src/" },
+        .{ .name = "Parser.cpp", .directory = "src/" },
     };
 
     const modprofile = b.addModule("profile", .{
@@ -21,11 +26,11 @@ pub fn build(b: *std.Build) void {
 
     inline for (files) |file| {
         modprofile.addCSourceFile(.{
-            .file = b.path(file),
+            .file = b.path(file.directory ++ file.name),
             .language = .cpp,
             .flags = &.{
                 "-MJ",
-                file ++ ".json.tmp",
+                file.name ++ ".json.tmp",
                 "-std=c++20",
                 // "-Wall",
                 // "-Wextra",
