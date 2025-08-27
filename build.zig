@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 
 const SourceFile = struct {
     name: []const u8,
@@ -59,4 +60,27 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }
+
+    const modcompiledb = b.createModule(.{
+        .optimize = optimize,
+        .target = b.resolveTargetQuery(
+            .fromTarget(&builtin.target), // must be native
+        ),
+        .root_source_file = b.path("compiledb/main.zig"),
+    });
+    const compiledb = b.addExecutable(.{
+        .name = "compiledb",
+        .root_module = modcompiledb,
+    });
+    const cleanup_step = b.step(
+        "compiledb",
+        "Cleanup json fragments and form them into compile_commands.json",
+    );
+    const cleanup_command = b.addRunArtifact(compiledb);
+    cleanup_command.addArgs(
+        &.{
+            std.process.getCwdAlloc(b.allocator) catch unreachable,
+        },
+    );
+    cleanup_step.dependOn(&cleanup_command.step);
 }
