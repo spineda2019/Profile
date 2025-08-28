@@ -83,4 +83,5 @@ pub fn build(b: *std.Build) void {
         },
     );
     cleanup_step.dependOn(&cleanup_command.step);
+    b.getInstallStep().dependOn(cleanup_step);
 }
