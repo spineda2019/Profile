@@ -21,10 +21,10 @@
 
 namespace directory_validation {
 bool DirectoryExists(const std::filesystem::path& directory_name) {
-  if (!std::filesystem::exists(directory_name)) {
-    return false;
-  } else {
-    return true;
-  }
+    if (!std::filesystem::exists(directory_name)) {
+        return false;
+    } else {
+        return true;
+    }
 }
 }  // namespace directory_validation

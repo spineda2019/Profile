@@ -103,210 +103,217 @@ Parser::Parser(const bool&& verbose_printing,
       file_count_{0},
       terminate_jobs_{false},
       verbose_printing_{verbose_printing} {
-  for (const std::string& regex : custom_regexes) {
-    custom_regexes_->emplace_back(
-        std::make_tuple<std::regex, std::string_view, std::size_t>(
-            std::regex{regex}, std::string_view{regex}, 0));
-  }
+    for (const std::string& regex : custom_regexes) {
+        custom_regexes_->emplace_back(
+            std::make_tuple<std::regex, std::string_view, std::size_t>(
+                std::regex{regex}, std::string_view{regex}, 0));
+    }
 }
 
 namespace {
 inline std::optional<std::size_t> FindCommentPosition(
     const CommentFormat& comment_format, const std::string_view line) {
-  switch (comment_format) {
-    case CommentFormat::DoubleSlash:
-      return line.find("//");
-      break;
-    case CommentFormat::PoundSign:
-      return line.find("#");
-      break;
-  }
+    switch (comment_format) {
+        case CommentFormat::DoubleSlash:
+            return line.find("//");
+            break;
+        case CommentFormat::PoundSign:
+            return line.find("#");
+            break;
+    }
 
-  /*
-   * Only possible if new file type is added to the parser class but forgotten
-   * to be checked in the above switch. This will allow our linter to warn of
-   * non-exhaustive checks will appeasing the compiler of having a return on all
-   * control paths without having a default case!
-   */
-  return std::nullopt;
+    /*
+     * Only possible if new file type is added to the parser class but forgotten
+     * to be checked in the above switch. This will allow our linter to warn of
+     * non-exhaustive checks will appeasing the compiler of having a return on
+     * all control paths without having a default case!
+     */
+    return std::nullopt;
 }
 }  // namespace
 
 void Parser::ThreadWaitingRoom() {
-  std::filesystem::path entry{};
+    std::filesystem::path entry{};
 
-  while (true) {
-    {
-      std::unique_lock<std::mutex> lock{job_lock_};
-      job_condition_.wait(
-          lock, [this] { return !jobs_.empty() || terminate_jobs_.load(); });
+    while (true) {
+        {
+            std::unique_lock<std::mutex> lock{job_lock_};
+            job_condition_.wait(lock, [this] {
+                return !jobs_.empty() || terminate_jobs_.load();
+            });
 
-      if (terminate_jobs_.load()) [[unlikely]] {
-        return;
-      }
+            if (terminate_jobs_.load()) [[unlikely]] {
+                return;
+            }
 
-      entry.swap(jobs_.front());
+            entry.swap(jobs_.front());
 
-      jobs_.pop();
+            jobs_.pop();
+        }
+
+        this->RecursivelyParseFiles(entry);
     }
-
-    this->RecursivelyParseFiles(entry);
-  }
 }
 
 const std::optional<CommentFormat> Parser::IsValidFile(
     const std::string&& extension) {
-  if (comment_formats_.contains(extension)) {
-    if (std::scoped_lock<std::mutex> lock{data_lock_};
-        file_type_frequencies_.contains(extension)) {
-      file_type_frequencies_[extension]++;
-    } else {
-      file_type_frequencies_.emplace(extension, 1);
-    }
+    if (comment_formats_.contains(extension)) {
+        if (std::scoped_lock<std::mutex> lock{data_lock_};
+            file_type_frequencies_.contains(extension)) {
+            file_type_frequencies_[extension]++;
+        } else {
+            file_type_frequencies_.emplace(extension, 1);
+        }
 
-    return comment_formats_.at(extension);
-  } else {
-    return std::nullopt;
-  }
+        return comment_formats_.at(extension);
+    } else {
+        return std::nullopt;
+    }
 }
 
 void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
-  std::optional<CommentFormat> comment_format{
-      this->IsValidFile(current_file.extension().string())};
+    std::optional<CommentFormat> comment_format{
+        this->IsValidFile(current_file.extension().string())};
 
-  if (!comment_format.has_value()) {
-    return;
-  }
-
-  std::ifstream file_stream(current_file);
-  std::size_t line_count = 0;
-  std::string line{};
-  std::optional<std::size_t> comment_position{};
-  std::string::iterator start{};
-  file_count_.fetch_add(1);
-
-  while (std::getline(file_stream, line)) {
-    line_count++;
-
-    comment_position = FindCommentPosition(comment_format.value(), line);
-
-    if (!comment_position.has_value()) {
-      return;
-    } else if (comment_position.value() == std::string::npos) {
-      continue;
+    if (!comment_format.has_value()) {
+        return;
     }
 
-    start = line.begin() + comment_position.value();
-    std::string sub_str(start, line.end());
-    for (auto& [keyword_regex, keyword_count, keyword_literal] :
-         keyword_pairs_) {
-      if (std::regex_search(sub_str, keyword_regex)) {
-        if (verbose_printing_) {
-          std::scoped_lock<std::mutex> lock{print_lock_};
-          std::cout << keyword_literal << " Found:" << std::endl
-                    << "File: " << current_file << std::endl
-                    << "Line Number: " << line_count << std::endl
-                    << "Line: " << line << std::endl
-                    << std::endl;
+    std::ifstream file_stream(current_file);
+    std::size_t line_count = 0;
+    std::string line{};
+    std::optional<std::size_t> comment_position{};
+    std::string::iterator start{};
+    file_count_.fetch_add(1);
+
+    while (std::getline(file_stream, line)) {
+        line_count++;
+
+        comment_position = FindCommentPosition(comment_format.value(), line);
+
+        if (!comment_position.has_value()) {
+            return;
+        } else if (comment_position.value() == std::string::npos) {
+            continue;
         }
 
-        keyword_count.fetch_add(1);
-      }
-    }
+        start = line.begin() + comment_position.value();
+        std::string sub_str(start, line.end());
+        for (auto& [keyword_regex, keyword_count, keyword_literal] :
+             keyword_pairs_) {
+            if (std::regex_search(sub_str, keyword_regex)) {
+                if (verbose_printing_) {
+                    std::scoped_lock<std::mutex> lock{print_lock_};
+                    std::cout << keyword_literal << " Found:" << std::endl
+                              << "File: " << current_file << std::endl
+                              << "Line Number: " << line_count << std::endl
+                              << "Line: " << line << std::endl
+                              << std::endl;
+                }
 
-    if (custom_regexes_.has_value()) {
-      for (auto& [regex, literal, count] : custom_regexes_.value()) {
-        if (std::regex_search(sub_str, regex)) {
-          if (verbose_printing_) {
-            std::scoped_lock<std::mutex> lock{print_lock_};
-            std::cout << "Regex " << literal << " Found:" << std::endl
-                      << "File: " << current_file << std::endl
-                      << "Line Number: " << line_count << std::endl
-                      << "Line: " << line << std::endl
-                      << std::endl;
-          }
-
-          std::scoped_lock<std::mutex> lock{data_lock_};
-          count++;
+                keyword_count.fetch_add(1);
+            }
         }
-      }
+
+        if (custom_regexes_.has_value()) {
+            for (auto& [regex, literal, count] : custom_regexes_.value()) {
+                if (std::regex_search(sub_str, regex)) {
+                    if (verbose_printing_) {
+                        std::scoped_lock<std::mutex> lock{print_lock_};
+                        std::cout << "Regex " << literal
+                                  << " Found:" << std::endl
+                                  << "File: " << current_file << std::endl
+                                  << "Line Number: " << line_count << std::endl
+                                  << "Line: " << line << std::endl
+                                  << std::endl;
+                    }
+
+                    std::scoped_lock<std::mutex> lock{data_lock_};
+                    count++;
+                }
+            }
+        }
     }
-  }
 }
 
 void Parser::ReportSummary() const {
-  std::cout << std::endl
-            << "------------------------------------ Summary ------------------"
-               "-----------------"
-            << std::endl;
-  std::cout << std::endl
-            << std::left << std::setw(19) << "File Extension" << std::left
-            << "|" << std::left << std::setw(20) << "Files" << std::endl;
-  std::cout << "---------------------------------------------------------------"
-               "-----------------"
-            << std::endl;
-  for (const auto& [file_extension, frequency] : file_type_frequencies_) {
-    std::cout << std::left << std::setw(19) << file_extension << "|"
-              << std::setw(20) << frequency << std::endl;
+    std::cout
+        << std::endl
+        << "------------------------------------ Summary ------------------"
+           "-----------------"
+        << std::endl;
+    std::cout << std::endl
+              << std::left << std::setw(19) << "File Extension" << std::left
+              << "|" << std::left << std::setw(20) << "Files" << std::endl;
     std::cout
         << "---------------------------------------------------------------"
            "-----------------"
         << std::endl;
-  }
+    for (const auto& [file_extension, frequency] : file_type_frequencies_) {
+        std::cout << std::left << std::setw(19) << file_extension << "|"
+                  << std::setw(20) << frequency << std::endl;
+        std::cout
+            << "---------------------------------------------------------------"
+               "-----------------"
+            << std::endl;
+    }
 }
 
 void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
-  const std::uint32_t thread_capacity = std::thread::hardware_concurrency();
+    const std::uint32_t thread_capacity = std::thread::hardware_concurrency();
 
-  std::cout << "Concurrent Threads Supported: " << thread_capacity << std::endl
-            << std::endl;
+    std::cout << "Concurrent Threads Supported: " << thread_capacity
+              << std::endl
+              << std::endl;
 
-  for (std::uint32_t threads{0}; threads < thread_capacity; threads++) {
-    thread_pool_.emplace_back(&Parser::ThreadWaitingRoom, this);
-  }
+    for (std::uint32_t threads{0}; threads < thread_capacity; threads++) {
+        thread_pool_.emplace_back(&Parser::ThreadWaitingRoom, this);
+    }
 
-  std::filesystem::recursive_directory_iterator directory_iterator(
-      current_file);
+    std::filesystem::recursive_directory_iterator directory_iterator(
+        current_file);
 
-  std::ranges::for_each(
-      directory_iterator, [this](const std::filesystem::path& entry) {
-        if (!(std::filesystem::is_symlink(entry) ||
-              std::filesystem::is_directory(entry))) [[likely]] {
-          {
-            std::unique_lock<std::mutex> lock{job_lock_};
-            jobs_.emplace(std::move(entry));
-          }
-          job_condition_.notify_one();
+    std::ranges::for_each(
+        directory_iterator, [this](const std::filesystem::path& entry) {
+            if (!(std::filesystem::is_symlink(entry) ||
+                  std::filesystem::is_directory(entry))) [[likely]] {
+                {
+                    std::unique_lock<std::mutex> lock{job_lock_};
+                    jobs_.emplace(std::move(entry));
+                }
+                job_condition_.notify_one();
+            }
+        });
+
+    while (true) {
+        if (std::unique_lock<std::mutex> lock{job_lock_}; jobs_.size() == 0)
+            [[unlikely]] {
+            break;
         }
-      });
-
-  while (true) {
-    if (std::unique_lock<std::mutex> lock{job_lock_}; jobs_.size() == 0)
-        [[unlikely]] {
-      break;
     }
-  }
 
-  terminate_jobs_.store(true);
-  job_condition_.notify_all();
-  thread_pool_.clear();
+    terminate_jobs_.store(true);
+    job_condition_.notify_all();
+    thread_pool_.clear();
 
-  std::cout << "Files Profiled: " << file_count_.load() << std::endl;
-  for (const auto& [_, keyword_count, keyword_literal] : keyword_pairs_) {
-    std::cout << keyword_literal << "s Found: " << keyword_count << std::endl;
-  }  // TODO(not_a_real_todo) test
-  if (custom_regexes_.has_value()) {
-    std::cout
-        << std::endl
-        << "------------------------------------ Customs ------------------"
-           "-----------------"
-        << std::endl;
-    for (const auto& [_, literal, count] : custom_regexes_.value()) {
-      std::cout << "Amount of " << literal << " Found: " << count << std::endl;
+    std::cout << "Files Profiled: " << file_count_.load() << std::endl;
+    for (const auto& [_, keyword_count, keyword_literal] : keyword_pairs_) {
+        std::cout << keyword_literal << "s Found: " << keyword_count
+                  << std::endl;
+    }  // TODO(not_a_real_todo) test
+    if (custom_regexes_.has_value()) {
+        std::cout
+            << std::endl
+            << "------------------------------------ Customs ------------------"
+               "-----------------"
+            << std::endl;
+        for (const auto& [_, literal, count] : custom_regexes_.value()) {
+            std::cout << "Amount of " << literal << " Found: " << count
+                      << std::endl;
+        }
     }
-  }
-  this->ReportSummary();
-  std::cout << std::endl;
+    this->ReportSummary();
+    std::cout << std::endl;
 }
 
 }  // namespace parser_info

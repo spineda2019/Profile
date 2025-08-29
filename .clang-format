@@ -1,1 +1,6 @@
 BasedOnStyle: Google
+
+CommentPragmas:  '^ IWYU pragma:'
+NamespaceIndentation: None
+AccessModifierOffset: -3
+IndentWidth: 4
