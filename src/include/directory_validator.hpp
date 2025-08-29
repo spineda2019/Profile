@@ -16,12 +16,12 @@
  *  with this program. If not, see <https://www.gnu.org/licenses/>
  */
 
-#ifndef INCLUDE_DIRECTORY_VALIDATOR_HPP_
-#define INCLUDE_DIRECTORY_VALIDATOR_HPP_
+#ifndef SRC_INCLUDE_DIRECTORY_VALIDATOR_HPP_
+#define SRC_INCLUDE_DIRECTORY_VALIDATOR_HPP_
 
 #include <filesystem>
 
 namespace directory_validation {
 bool DirectoryExists(const std::filesystem::path& directory_name);
 }  // namespace directory_validation
-#endif  // INCLUDE_DIRECTORY_VALIDATOR_HPP_
+#endif  // SRC_INCLUDE_DIRECTORY_VALIDATOR_HPP_
