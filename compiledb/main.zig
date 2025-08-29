@@ -26,7 +26,7 @@ pub fn main() !void {
 
     std.debug.print("Cleaning up: {s}\n", .{parsed_args.path_to_clean});
 
-    var dir: std.fs.Dir = try std.fs.openDirAbsolute(
+    var dir: std.fs.Dir = try std.fs.cwd().openDir(
         parsed_args.path_to_clean,
         .{
             .iterate = true,
@@ -54,32 +54,32 @@ pub fn main() !void {
         );
         defer compiledb_file.close();
 
-        var write_buffer: [4096]u8 = .{0} ** 4096;
-        var read_buffer: [4096]u8 = .{0} ** 4096;
-        var writer: std.fs.File.Writer = compiledb_file.writer(&write_buffer);
-        defer writer.end() catch unreachable;
+        var write_buffer: [4096]u8 = undefined;
+        var read_buffer: [4096]u8 = undefined;
 
-        _ = try writer.interface.write("[");
-        defer _ = writer.interface.write("]") catch unreachable;
+        var file_writer: std.fs.File.Writer = compiledb_file.writerStreaming(
+            &write_buffer,
+        );
+        const writer = &file_writer.interface;
+        defer writer.flush() catch unreachable;
+
+        _ = try writer.write("[\n");
+        defer _ = writer.write("]") catch unreachable;
 
         for (fragments.items) |fragment| {
             std.debug.print("Found: {s}\n", .{fragment});
             var fragment_file: std.fs.File = try dir.openFile(fragment, .{});
-            var reader: std.fs.File.Reader = fragment_file.reader(&read_buffer);
-
             defer dir.deleteFile(fragment) catch unreachable;
             defer fragment_file.close();
+            std.debug.print("Size: {}\n", .{try fragment_file.getEndPos()});
 
-            var buf: [512]u8 = .{0} ** 512;
-            start: switch (try reader.interface.readSliceShort(&buf)) {
-                buf.len => {
-                    _ = try writer.interface.write(&buf);
-                    continue :start try reader.interface.readSliceShort(&buf);
-                },
-                else => |num_read| {
-                    _ = try writer.interface.write(buf[0..num_read]);
-                },
-            }
+            var file_reader: std.fs.File.Reader = fragment_file.readerStreaming(
+                &read_buffer,
+            );
+            const reader = &file_reader.interface;
+            const read = try reader.streamRemaining(writer);
+
+            std.debug.print("Processed {} bytes...\n\n", .{read});
         }
     }
 }
