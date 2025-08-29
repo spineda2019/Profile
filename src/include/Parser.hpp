@@ -16,8 +16,8 @@
  *  with this program. If not, see <https://www.gnu.org/licenses/>
  */
 
-#ifndef INCLUDE_PARSER_HPP_
-#define INCLUDE_PARSER_HPP_
+#ifndef SRC_INCLUDE_PARSER_HPP_
+#define SRC_INCLUDE_PARSER_HPP_
 
 #include <array>
 #include <atomic>
@@ -25,7 +25,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
-#include <functional>
 #include <mutex>
 #include <optional>
 #include <queue>
@@ -35,7 +34,6 @@
 #include <thread>
 #include <tuple>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
 namespace parser_info {
@@ -66,22 +64,22 @@ class Parser {
  private:
   std::array<std::tuple<std::regex, std::atomic<std::size_t>, std::string_view>,
              4>
-      keyword_pairs_;
-  std::queue<std::filesystem::path> jobs_;
-  std::mutex print_lock_;
-  std::mutex job_lock_;
-  std::mutex data_lock_;
-  std::unordered_map<std::string, std::size_t> file_type_frequencies_;
-  const std::unordered_map<std::string_view, CommentFormat> comment_formats_;
-  std::condition_variable job_condition_;
+      keyword_pairs_{};
+  std::queue<std::filesystem::path> jobs_{};
+  std::mutex print_lock_{};
+  std::mutex job_lock_{};
+  std::mutex data_lock_{};
+  std::unordered_map<std::string, std::size_t> file_type_frequencies_{};
+  const std::unordered_map<std::string_view, CommentFormat> comment_formats_{};
+  std::condition_variable job_condition_{};
   std::optional<
       std::vector<std::tuple<std::regex, std::string_view, std::size_t>>>
-      custom_regexes_;
-  std::vector<std::jthread> thread_pool_;
-  std::atomic<std::size_t> file_count_;
-  std::atomic<bool> terminate_jobs_;
-  const bool verbose_printing_;
+      custom_regexes_{std::nullopt};
+  std::vector<std::jthread> thread_pool_{};
+  std::atomic<std::size_t> file_count_{};
+  std::atomic<bool> terminate_jobs_{};
+  const bool verbose_printing_{};
 };
 
 }  // namespace parser_info
-#endif  // INCLUDE_PARSER_HPP_
+#endif  // SRC_INCLUDE_PARSER_HPP_

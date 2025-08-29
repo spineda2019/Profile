@@ -33,9 +33,9 @@ pub fn build(b: *std.Build) void {
                 "-MJ",
                 file.name ++ ".json.tmp",
                 "-std=c++20",
-                // "-Wall",
-                // "-Wextra",
-                // "-Wpedantic",
+                "-Wall",
+                "-Wextra",
+                "-Wpedantic",
                 // "-Wshadow",
                 // "-Wconversion",
                 // "-Werror",
@@ -82,6 +82,7 @@ pub fn build(b: *std.Build) void {
             std.process.getCwdAlloc(b.allocator) catch unreachable,
         },
     );
+    cleanup_command.step.dependOn(&exeprofile.step);
     cleanup_step.dependOn(&cleanup_command.step);
     b.getInstallStep().dependOn(cleanup_step);
 }

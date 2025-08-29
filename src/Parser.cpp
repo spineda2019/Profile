@@ -40,16 +40,17 @@
 
 namespace parser_info {
 Parser::Parser(const bool&& verbose_printing)
-    : verbose_printing_(verbose_printing),
-      file_type_frequencies_{},
-      file_count_(0),
-      custom_regexes_{std::nullopt},
+    : keyword_pairs_{{
+          {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
+          {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
+          {std::regex("\\bBUG(\\(\\w*\\))?"), 0, "BUG"},
+          {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
+      }},
       jobs_{},
-      thread_pool_{},
-      terminate_jobs_{false},
+      print_lock_{},
       job_lock_{},
       data_lock_{},
-      job_condition_{},
+      file_type_frequencies_{},
       comment_formats_{
           {".c", CommentFormat::DoubleSlash},
           {".cpp", CommentFormat::DoubleSlash},
@@ -62,27 +63,26 @@ Parser::Parser(const bool&& verbose_printing)
           {".cs", CommentFormat::DoubleSlash},
           {".py", CommentFormat::PoundSign},
       },
-      keyword_pairs_{{
-          {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
-          {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
-          {std::regex("\\bBUG(\\(\\w*\\))?"), 0, "BUG"},
-          {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
-      }} {}
+      job_condition_{},
+      custom_regexes_{std::nullopt},
+      thread_pool_{},
+      file_count_{0},
+      terminate_jobs_{false},
+      verbose_printing_{verbose_printing} {}
 
 Parser::Parser(const bool&& verbose_printing,
                const std::vector<std::string>&& custom_regexes)
-    : verbose_printing_(verbose_printing),
-      file_type_frequencies_{},
-      file_count_(0),
-      custom_regexes_{std::make_optional(
-          std::vector<std::tuple<std::regex, std::string_view, std::size_t>>{
-              custom_regexes.size()})},
+    : keyword_pairs_{{
+          {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
+          {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
+          {std::regex("\\bBUG(\\(\\w*\\))?"), 0, "BUG"},
+          {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
+      }},
       jobs_{},
-      thread_pool_{},
-      terminate_jobs_{false},
+      print_lock_{},
       job_lock_{},
       data_lock_{},
-      job_condition_{},
+      file_type_frequencies_{},
       comment_formats_{
           {".c", CommentFormat::DoubleSlash},
           {".cpp", CommentFormat::DoubleSlash},
@@ -95,12 +95,14 @@ Parser::Parser(const bool&& verbose_printing,
           {".cs", CommentFormat::DoubleSlash},
           {".py", CommentFormat::PoundSign},
       },
-      keyword_pairs_{{
-          {std::regex("\\bTODO(\\(\\w*\\))?"), 0, "TODO"},
-          {std::regex("\\bFIXME(\\(\\w*\\))?"), 0, "FIXME"},
-          {std::regex("\\bBUG(\\(\\w*\\))?"), 0, "BUG"},
-          {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
-      }} {
+      job_condition_{},
+      custom_regexes_{std::make_optional(
+          std::vector<std::tuple<std::regex, std::string_view, std::size_t>>{
+              custom_regexes.size()})},
+      thread_pool_{},
+      file_count_{0},
+      terminate_jobs_{false},
+      verbose_printing_{verbose_printing} {
   for (const std::string& regex : custom_regexes) {
     custom_regexes_->emplace_back(
         std::make_tuple<std::regex, std::string_view, std::size_t>(
@@ -180,7 +182,6 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
   std::size_t line_count = 0;
   std::string line{};
   std::optional<std::size_t> comment_position{};
-  std::size_t position{};
   std::string::iterator start{};
   file_count_.fetch_add(1);
 
