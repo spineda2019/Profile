@@ -162,16 +162,15 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
 
     if (!comment_format.has_value()) {
         return;
+    } else {
+        file_count_.fetch_add(1);
     }
 
-    std::ifstream file_stream(current_file);
-    std::size_t line_count = 0;
-    std::string line{};
+    std::ifstream file_stream{current_file};
+    std::size_t line_count{1};
     std::string_view::iterator comment_position{};
-    file_count_.fetch_add(1);
 
-    while (std::getline(file_stream, line)) {
-        line_count++;
+    for (std::string line{}; std::getline(file_stream, line); ++line_count) {
         std::string_view full_view{line};
 
         comment_position = FindCommentPosition(comment_format.value(), line);
