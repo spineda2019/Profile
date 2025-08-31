@@ -110,11 +110,11 @@ Parser::Parser(const bool&& verbose_printing,
 
 namespace {
 inline std::string_view::iterator FindCommentPosition(
-    const CommentFormat& comment_format, const std::string_view line) {
+    const Parser::CommentFormat& comment_format, const std::string_view line) {
     switch (comment_format) {
-        case CommentFormat::DoubleSlash:
+        case Parser::CommentFormat::DoubleSlash:
             return std::ranges::find_first_of(line, "//");
-        case CommentFormat::PoundSign:
+        case Parser::CommentFormat::PoundSign:
             return std::ranges::find_first_of(line, "#");
             break;
     }
@@ -140,7 +140,7 @@ void Parser::ThreadWaitingRoom() {
     }
 }
 
-const std::optional<CommentFormat> Parser::IsValidFile(
+std::optional<Parser::CommentFormat> Parser::IsValidFile(
     const std::string&& extension) {
     if (comment_formats_.contains(extension)) {
         if (std::scoped_lock<std::mutex> lock{data_lock_};

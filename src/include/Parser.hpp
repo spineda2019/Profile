@@ -21,7 +21,6 @@
 
 #include <array>
 #include <atomic>
-#include <condition_variable>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -40,22 +39,21 @@
 
 namespace parser_info {
 
-enum class CommentFormat : std::uint8_t {
-    DoubleSlash,
-    PoundSign,
-};
-
 class Parser {
  public:
+    enum class CommentFormat : std::uint8_t {
+        DoubleSlash,
+        PoundSign,
+    };
+
     explicit Parser(const bool&& verbose_printing);
     explicit Parser(const bool&& verbose_printing,
                     const std::vector<std::string>&& custom_regexes);
-    ~Parser() = default;
 
     void ParseFiles(const std::filesystem::path& current_file) noexcept;
 
  private:
-    const std::optional<CommentFormat> IsValidFile(const std::string&& file);
+    std::optional<CommentFormat> IsValidFile(const std::string&& file);
 
     void ReportSummary() const;
 

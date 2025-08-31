@@ -14,6 +14,11 @@ from subprocess import DEVNULL as subprocess_devnull
 
 
 def main(executable_path: str, repo_path: str, iterations: int) -> int:
+    accepted_exe_names: list[str] = ["profile",
+                                     "Profile",
+                                     "profile.exe",
+                                     "Profile.exe"]
+
     if iterations < 1:
         print("ERROR: iteration number must be at least 1!", file=sys_stderr)
         return -1
@@ -25,8 +30,7 @@ def main(executable_path: str, repo_path: str, iterations: int) -> int:
     elif not os_path_isfile(executable_path):
         print(f"ERROR: {executable_path} is not a file!", file=sys_stderr)
         return -1
-    elif (os_path_basename(executable_path) != "Profile"
-          and os_path_basename(executable_path) != "Profile.exe"):
+    elif (os_path_basename(executable_path) not in accepted_exe_names):
         print(f"ERROR: {os_path_basename(executable_path)} does not seem to "
               "be the 'Profile' executable!", file=sys_stderr)
         return -1
