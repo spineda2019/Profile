@@ -16,17 +16,18 @@
  *  with this program. If not, see <https://www.gnu.org/licenses/>
  */
 
-#include <argparse/argparse.hpp>
 #include <array>
 #include <filesystem>
 #include <iomanip>
 #include <ios>
 #include <iostream>
 #include <span>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
+#include "argparse/argparse.hpp"
 #include "include/Parser.hpp"
 #include "include/directory_validator.hpp"
 

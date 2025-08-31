@@ -25,10 +25,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <limits>
 #include <mutex>
 #include <optional>
 #include <queue>
 #include <regex>
+#include <semaphore>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -72,13 +74,13 @@ class Parser {
     std::unordered_map<std::string, std::size_t> file_type_frequencies_{};
     const std::unordered_map<std::string_view, CommentFormat>
         comment_formats_{};
-    std::condition_variable job_condition_{};
     std::optional<
         std::vector<std::tuple<std::regex, std::string_view, std::size_t>>>
         custom_regexes_{std::nullopt};
     std::vector<std::jthread> thread_pool_{};
+    std::counting_semaphore<std::numeric_limits<std::ptrdiff_t>::max()>
+        job_semaphore_{0};
     std::atomic<std::size_t> file_count_{};
-    std::atomic<bool> terminate_jobs_{};
     const bool verbose_printing_{};
 };
 

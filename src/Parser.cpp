@@ -63,11 +63,10 @@ Parser::Parser(const bool&& verbose_printing)
           {".cs", CommentFormat::DoubleSlash},
           {".py", CommentFormat::PoundSign},
       },
-      job_condition_{},
       custom_regexes_{std::nullopt},
       thread_pool_{},
+      job_semaphore_{0},
       file_count_{0},
-      terminate_jobs_{false},
       verbose_printing_{verbose_printing} {}
 
 Parser::Parser(const bool&& verbose_printing,
@@ -95,13 +94,12 @@ Parser::Parser(const bool&& verbose_printing,
           {".cs", CommentFormat::DoubleSlash},
           {".py", CommentFormat::PoundSign},
       },
-      job_condition_{},
       custom_regexes_{std::make_optional(
           std::vector<std::tuple<std::regex, std::string_view, std::size_t>>{
               custom_regexes.size()})},
       thread_pool_{},
+      job_semaphore_{0},
       file_count_{0},
-      terminate_jobs_{false},
       verbose_printing_{verbose_printing} {
     for (const std::string& regex : custom_regexes) {
         custom_regexes_->emplace_back(
@@ -127,13 +125,12 @@ void Parser::ThreadWaitingRoom() {
     std::filesystem::path entry{};
 
     while (true) {
+        job_semaphore_.acquire();
         {
             std::unique_lock<std::mutex> lock{job_lock_};
-            job_condition_.wait(lock, [this] {
-                return !jobs_.empty() || terminate_jobs_.load();
-            });
 
-            if (terminate_jobs_.load()) [[unlikely]] {
+            if (jobs_.empty()) [[unlikely]] {
+                job_semaphore_.release();
                 return;
             }
 
@@ -271,20 +268,14 @@ void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
                     std::unique_lock<std::mutex> lock{job_lock_};
                     jobs_.emplace(std::move(entry));
                 }
-                job_condition_.notify_one();
+                job_semaphore_.release();
             }
         });
 
-    while (true) {
-        if (std::unique_lock<std::mutex> lock{job_lock_}; jobs_.size() == 0)
-            [[unlikely]] {
-            break;
-        }
-    }
-
-    terminate_jobs_.store(true);
-    job_condition_.notify_all();
-    thread_pool_.clear();
+    std::ranges::for_each(thread_pool_, [this](std::jthread& t) {
+        job_semaphore_.release();
+        t.join();
+    });
 
     std::cout << "Files Profiled: " << file_count_.load() << std::endl;
     for (const auto& [_, keyword_count, keyword_literal] : keyword_pairs_) {
