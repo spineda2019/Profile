@@ -168,51 +168,48 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
 
     std::ifstream file_stream{current_file};
     std::size_t line_count{1};
-    std::string_view::iterator comment_position{};
 
     for (std::string line{}; std::getline(file_stream, line); ++line_count) {
-        std::string_view full_view{line};
+        const std::string_view full_view{line};
 
-        comment_position = FindCommentPosition(comment_format.value(), line);
-
-        if (comment_position == full_view.cend()) {
-            continue;
-        }
-
-        std::string_view sub_str{comment_position, full_view.cend()};
-        for (auto& [keyword_regex, keyword_count, keyword_literal] :
-             keyword_pairs_) {
-            if (std::regex_search(sub_str.cbegin(), sub_str.cend(),
-                                  keyword_regex)) {
-                if (verbose_printing_) {
-                    std::scoped_lock<std::mutex> lock{print_lock_};
-                    std::cout << keyword_literal << " Found:" << std::endl
-                              << "File: " << current_file << std::endl
-                              << "Line Number: " << line_count << std::endl
-                              << "Line: " << line << std::endl
-                              << std::endl;
-                }
-
-                keyword_count.fetch_add(1);
-            }
-        }
-
-        if (custom_regexes_.has_value()) {
-            for (auto& [regex, literal, count] : custom_regexes_.value()) {
+        if (std::string_view sub_str{
+                FindCommentPosition(comment_format.value(), full_view),
+                full_view.cend()};
+            !sub_str.empty()) {
+            for (auto& [keyword_regex, keyword_count, keyword_literal] :
+                 keyword_pairs_) {
                 if (std::regex_search(sub_str.cbegin(), sub_str.cend(),
-                                      regex)) {
+                                      keyword_regex)) {
                     if (verbose_printing_) {
                         std::scoped_lock<std::mutex> lock{print_lock_};
-                        std::cout << "Regex " << literal
-                                  << " Found:" << std::endl
+                        std::cout << keyword_literal << " Found:" << std::endl
                                   << "File: " << current_file << std::endl
                                   << "Line Number: " << line_count << std::endl
                                   << "Line: " << line << std::endl
                                   << std::endl;
                     }
 
-                    std::scoped_lock<std::mutex> lock{data_lock_};
-                    count++;
+                    keyword_count.fetch_add(1);
+                }
+            }
+
+            if (custom_regexes_.has_value()) {
+                for (auto& [regex, literal, count] : custom_regexes_.value()) {
+                    if (std::regex_search(sub_str.cbegin(), sub_str.cend(),
+                                          regex)) {
+                        if (verbose_printing_) {
+                            std::scoped_lock<std::mutex> lock{print_lock_};
+                            std::cout
+                                << "Regex " << literal << " Found:" << std::endl
+                                << "File: " << current_file << std::endl
+                                << "Line Number: " << line_count << std::endl
+                                << "Line: " << line << std::endl
+                                << std::endl;
+                        }
+
+                        std::scoped_lock<std::mutex> lock{data_lock_};
+                        count++;
+                    }
                 }
             }
         }
