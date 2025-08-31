@@ -111,24 +111,15 @@ Parser::Parser(const bool&& verbose_printing,
 }
 
 namespace {
-inline std::optional<std::size_t> FindCommentPosition(
+inline std::string_view::iterator FindCommentPosition(
     const CommentFormat& comment_format, const std::string_view line) {
     switch (comment_format) {
         case CommentFormat::DoubleSlash:
-            return line.find("//");
-            break;
+            return std::ranges::find_first_of(line, "//");
         case CommentFormat::PoundSign:
-            return line.find("#");
+            return std::ranges::find_first_of(line, "#");
             break;
     }
-
-    /*
-     * Only possible if new file type is added to the parser class but forgotten
-     * to be checked in the above switch. This will allow our linter to warn of
-     * non-exhaustive checks will appeasing the compiler of having a return on
-     * all control paths without having a default case!
-     */
-    return std::nullopt;
 }
 }  // namespace
 
@@ -182,26 +173,24 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
     std::ifstream file_stream(current_file);
     std::size_t line_count = 0;
     std::string line{};
-    std::optional<std::size_t> comment_position{};
-    std::string::iterator start{};
+    std::string_view::iterator comment_position{};
     file_count_.fetch_add(1);
 
     while (std::getline(file_stream, line)) {
         line_count++;
+        std::string_view full_view{line};
 
         comment_position = FindCommentPosition(comment_format.value(), line);
 
-        if (!comment_position.has_value()) {
-            return;
-        } else if (comment_position.value() == std::string::npos) {
+        if (comment_position == full_view.cend()) {
             continue;
         }
 
-        start = line.begin() + comment_position.value();
-        std::string sub_str(start, line.end());
+        std::string_view sub_str{comment_position, full_view.cend()};
         for (auto& [keyword_regex, keyword_count, keyword_literal] :
              keyword_pairs_) {
-            if (std::regex_search(sub_str, keyword_regex)) {
+            if (std::regex_search(sub_str.cbegin(), sub_str.cend(),
+                                  keyword_regex)) {
                 if (verbose_printing_) {
                     std::scoped_lock<std::mutex> lock{print_lock_};
                     std::cout << keyword_literal << " Found:" << std::endl
@@ -217,7 +206,8 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
 
         if (custom_regexes_.has_value()) {
             for (auto& [regex, literal, count] : custom_regexes_.value()) {
-                if (std::regex_search(sub_str, regex)) {
+                if (std::regex_search(sub_str.cbegin(), sub_str.cend(),
+                                      regex)) {
                     if (verbose_printing_) {
                         std::scoped_lock<std::mutex> lock{print_lock_};
                         std::cout << "Regex " << literal

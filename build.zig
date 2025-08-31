@@ -36,9 +36,9 @@ pub fn build(b: *std.Build) void {
                 "-Wall",
                 "-Wextra",
                 "-Wpedantic",
-                // "-Wshadow",
-                // "-Wconversion",
-                // "-Werror",
+                "-Wshadow",
+                "-Wconversion",
+                "-Werror",
             },
         });
     }
