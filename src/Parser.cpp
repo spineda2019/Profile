@@ -126,17 +126,14 @@ void Parser::ThreadWaitingRoom() {
 
     while (true) {
         job_semaphore_.acquire();
-        {
-            std::unique_lock<std::mutex> lock{job_lock_};
 
-            if (jobs_.empty()) [[unlikely]] {
-                job_semaphore_.release();
-                return;
-            }
-
+        if (std::unique_lock<std::mutex> lock{job_lock_}; !jobs_.empty())
+            [[likely]] {
             entry.swap(jobs_.front());
-
             jobs_.pop();
+        } else [[unlikely]] {
+            job_semaphore_.release();
+            return;
         }
 
         this->RecursivelyParseFiles(entry);
