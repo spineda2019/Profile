@@ -48,7 +48,6 @@ Parser::Parser(const bool&& verbose_printing)
           {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
       }},
       jobs_{},
-      print_lock_{},
       job_lock_{},
       data_lock_{},
       file_type_frequencies_{},
@@ -79,7 +78,6 @@ Parser::Parser(const bool&& verbose_printing,
           {std::regex("\\bHACK(\\(\\w*\\))?"), 0, "HACK"},
       }},
       jobs_{},
-      print_lock_{},
       job_lock_{},
       data_lock_{},
       file_type_frequencies_{},
@@ -182,7 +180,6 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
                 if (std::regex_search(sub_str.cbegin(), sub_str.cend(),
                                       keyword_regex)) {
                     if (verbose_printing_) {
-                        std::scoped_lock<std::mutex> lock{print_lock_};
                         std::println(
                             "{0} Found: \nFile: {1}\nLine Number: {2}\nLine: "
                             "{3}\n",
@@ -199,7 +196,6 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
                     if (std::regex_search(sub_str.cbegin(), sub_str.cend(),
                                           regex)) {
                         if (verbose_printing_) {
-                            std::scoped_lock<std::mutex> lock{print_lock_};
                             std::println(
                                 "Regex {0} Found: \nFile: {1}\nLine Number: "
                                 "{2}\nLine: "

@@ -66,7 +66,6 @@ class Parser {
         std::tuple<std::regex, std::atomic<std::size_t>, std::string_view>, 4>
         keyword_pairs_{};
     std::queue<std::filesystem::path> jobs_{};
-    std::mutex print_lock_{};
     std::mutex job_lock_{};
     std::mutex data_lock_{};
     std::unordered_map<std::string, std::size_t> file_type_frequencies_{};
