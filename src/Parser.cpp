@@ -29,6 +29,7 @@
 #include <mutex>
 #include <optional>
 #include <ostream>
+#include <print>
 #include <regex>
 #include <string>
 #include <string_view>
@@ -182,11 +183,11 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
                                       keyword_regex)) {
                     if (verbose_printing_) {
                         std::scoped_lock<std::mutex> lock{print_lock_};
-                        std::cout << keyword_literal << " Found:" << std::endl
-                                  << "File: " << current_file << std::endl
-                                  << "Line Number: " << line_count << std::endl
-                                  << "Line: " << line << std::endl
-                                  << std::endl;
+                        std::println(
+                            "{0} Found: \nFile: {1}\nLine Number: {2}\nLine: "
+                            "{3}\n",
+                            keyword_literal, current_file.c_str(), line_count,
+                            line);
                     }
 
                     keyword_count.fetch_add(1);
@@ -199,12 +200,12 @@ void Parser::RecursivelyParseFiles(const std::filesystem::path& current_file) {
                                           regex)) {
                         if (verbose_printing_) {
                             std::scoped_lock<std::mutex> lock{print_lock_};
-                            std::cout
-                                << "Regex " << literal << " Found:" << std::endl
-                                << "File: " << current_file << std::endl
-                                << "Line Number: " << line_count << std::endl
-                                << "Line: " << line << std::endl
-                                << std::endl;
+                            std::println(
+                                "Regex {0} Found: \nFile: {1}\nLine Number: "
+                                "{2}\nLine: "
+                                "{3}\n",
+                                literal, current_file.c_str(), line_count,
+                                line);
                         }
 
                         std::scoped_lock<std::mutex> lock{data_lock_};
