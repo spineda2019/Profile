@@ -32,7 +32,7 @@ pub fn build(b: *std.Build) void {
             .flags = &.{
                 "-MJ",
                 file.name ++ ".json.tmp",
-                "-std=c++20",
+                "-std=c++23",
                 "-Wall",
                 "-Wextra",
                 "-Wpedantic",
