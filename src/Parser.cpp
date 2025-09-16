@@ -236,7 +236,7 @@ void Parser::ReportSummary() const {
     }
 }
 
-void Parser::ParseFiles(const std::filesystem::path& current_file) noexcept {
+void Parser::ParseFiles(const std::filesystem::path& current_file) {
     const std::uint32_t thread_capacity = std::thread::hardware_concurrency();
 
     std::cout << "Concurrent Threads Supported: " << thread_capacity

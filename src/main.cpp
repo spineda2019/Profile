@@ -89,7 +89,11 @@ int main(int argc, char** argv) {
     try {
         argument_parser.parse_args(argc, argv);
     } catch (const std::exception& err) {
-        std::cerr << err.what() << std::endl;
+        std::cerr << "Exception Ocurred: " << err.what() << std::endl;
+        std::cerr << argument_parser;
+        return 1;
+    } catch (...) {
+        std::cerr << "Unknown Error occured: " << std::endl;
         std::cerr << argument_parser;
         return 1;
     }

@@ -50,7 +50,7 @@ class Parser {
     explicit Parser(const bool&& verbose_printing,
                     const std::vector<std::string>&& custom_regexes);
 
-    void ParseFiles(const std::filesystem::path& current_file) noexcept;
+    void ParseFiles(const std::filesystem::path& current_file);
 
  private:
     std::optional<CommentFormat> IsValidFile(const std::string&& file);
