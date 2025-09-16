@@ -17,10 +17,12 @@
  */
 
 #include <array>
+#include <exception>
 #include <filesystem>
 #include <iomanip>
 #include <ios>
 #include <iostream>
+#include <print>
 #include <span>
 #include <string>
 #include <string_view>
@@ -89,7 +91,7 @@ int main(int argc, char** argv) {
     try {
         argument_parser.parse_args(argc, argv);
     } catch (const std::exception& err) {
-        std::cerr << "Exception Ocurred: " << err.what() << std::endl;
+        std::println("Exception Ocurred: {}\nLine: {}\n", err.what(), __LINE__);
         std::cerr << argument_parser;
         return 1;
     } catch (...) {
@@ -148,15 +150,24 @@ int main(int argc, char** argv) {
 
     std::cout << "Profiling Directory " << directory << std::endl << std::endl;
 
-    if (std::vector<std::string> regexes{
-            argument_parser.get<std::vector<std::string>>("-c")};
-        regexes.size() != 0 && NoEmptyRegexes(regexes)) {
-        parser_info::Parser parser{argument_parser.get<bool>("-l"),
-                                   std::move(regexes)};
-        parser.ParseFiles(directory);
-    } else {
-        parser_info::Parser parser{argument_parser.get<bool>("-l")};
-        parser.ParseFiles(directory);
+    try {
+        if (std::vector<std::string> regexes{
+                argument_parser.get<std::vector<std::string>>("-c")};
+            regexes.size() != 0 && NoEmptyRegexes(regexes)) {
+            parser_info::Parser parser{argument_parser.get<bool>("-l"),
+                                       std::move(regexes)};
+            parser.ParseFiles(directory);
+        } else {
+            parser_info::Parser parser{argument_parser.get<bool>("-l")};
+            parser.ParseFiles(directory);
+        }
+    } catch (const std::exception& err) {
+        std::println("Exception Ocurred: {}\nLine: {}\n", err.what(), __LINE__);
+        std::cerr << argument_parser;
+        return 1;
+    } catch (...) {
+        std::println("FATAL! Runtime threw unexpected type. Line: {}",
+                     __LINE__);
     }
 
     return 0;
