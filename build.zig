@@ -66,7 +66,7 @@ pub fn build(b: *std.Build) void {
         .target = b.resolveTargetQuery(
             .fromTarget(&builtin.target), // must be native
         ),
-        .root_source_file = b.path("compiledb/main.zig"),
+        .root_source_file = b.path("cleandb/main.zig"),
     });
     const compiledb = b.addExecutable(.{
         .name = "compiledb",
